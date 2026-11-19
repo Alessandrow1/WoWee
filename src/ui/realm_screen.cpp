@@ -252,7 +252,7 @@ void RealmScreen::setStatus(const std::string& message) {
 const char* RealmScreen::getRealmStatus(uint8_t flags) const {
     if (flags & 0x02) return "Desconectado";
     if (flags & 0x01) return "Inválido";
-    if (flags & 0x80) return "Lotada";
+    if (flags & 0x80) return "Lotado";
     if (flags & 0x40) return "Novo";
     if (flags & 0x20) return "Recomendado";
     return "Disponível";
