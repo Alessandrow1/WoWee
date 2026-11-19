@@ -159,10 +159,9 @@ WoweeWorldMap WoweeWorldMapLoader::makeInstance(const std::string& mapName) {
     m.name = mapName;
     m.worldType = WoweeWorldMap::Instance;
     m.gridSize = 4;
-    m.tileBitmap.assign(bitmapBytesFor(4), 0);
-    for (uint32_t y = 0; y < 4; ++y)
-        for (uint32_t x = 0; x < 4; ++x)
-            m.setTile(x, y, true);
+    // All 16 tiles exist: emit the two fully set bytes directly.
+    // This avoids unnecessary repeated calls to setTile and its resize path.
+    m.tileBitmap.assign(bitmapBytesFor(4), 0xFF);
     return m;
 }
 
@@ -171,8 +170,10 @@ WoweeWorldMap WoweeWorldMapLoader::makeArena(const std::string& mapName) {
     m.name = mapName;
     m.worldType = WoweeWorldMap::Arena;
     m.gridSize = 1;
-    m.tileBitmap.assign(bitmapBytesFor(1), 0);
-    m.setTile(0, 0, true);
+    // Exactly one tile exists: only bit 0 is set. Emitting the final bitmap
+    // directly also avoids GCC 16's bogus stringop-overflow in an inlined
+    // setTile()->vector::resize() path for this already-sized one-byte vector.
+    m.tileBitmap.assign(bitmapBytesFor(1), 0x01);
     return m;
 }
 
