@@ -327,7 +327,7 @@ void AuthScreen::render(auth::AuthHandler& authHandler) {
         }
 
         if (authState == auth::AuthState::AUTHENTICATED) {
-            setStatus("Authentication successful!", false);
+            setStatus("Autenticação concluída!", false);
             authenticating = false;
 
             // Compute and save password hash if user typed a fresh password
@@ -362,11 +362,11 @@ void AuthScreen::render(auth::AuthHandler& authHandler) {
                 authHandler.disconnect();
                 beginAuthAttempt(authHandler);
             } else {
-                setStatus(failureReason.empty() ? "Authentication failed" : failureReason, true);
+                setStatus(failureReason.empty() ? "Falha na autenticação" : failureReason, true);
                 authenticating = false;
             }
         } else if (!waitingForSecurityCode && authTimer >= AUTH_TIMEOUT) {
-            setStatus("Connection timed out - server did not respond", true);
+            setStatus("Tempo esgotado: servidor não respondeu", true);
             authenticating = false;
             authHandler.disconnect();
         }
@@ -498,19 +498,19 @@ std::vector<AssetChoice> assetChoices(const game::ExpansionRegistry* registry) {
     if (registry == nullptr) return out;
 
     const game::ExpansionProfile* active = registry->getActive();
-    out.push_back({active ? "Match protocol  (" + active->shortName + ")"
-                          : std::string("Match protocol"),
+    out.push_back({active ? "Usar protocolo  (" + active->shortName + ")"
+                          : std::string("Usar protocolo"),
                    std::string()});
 
     for (const auto& candidate : registry->getAllProfiles()) {
         if (!std::filesystem::exists(candidate.dataPath + "/manifest.json")) continue;
-        out.push_back({candidate.shortName + " assets", candidate.id});
+        out.push_back({candidate.shortName + " (arquivos)", candidate.id});
     }
 
     const char* dataPathEnv = std::getenv("WOW_DATA_PATH");
     const std::filesystem::path baseData = dataPathEnv ? dataPathEnv : "./Data";
     if (std::filesystem::exists(baseData / "manifest.json")) {
-        out.push_back({"Legacy root Data", "legacy"});
+        out.push_back({"Dados antigos (raiz)", "legacy"});
     }
     return out;
 }
@@ -681,7 +681,7 @@ void AuthScreen::renderCard(auth::AuthHandler& authHandler, float screenW, float
         std::vector<std::string> rows;
         rows.reserve(servers_.size() + 1);
         for (const ServerProfile& s : servers_) rows.push_back(serverRowLabel(s));
-        rows.emplace_back("Somewhere else...");
+        rows.emplace_back("Outro servidor...");
 
         const bool known = selectedServerIndex_ >= 0 &&
                            selectedServerIndex_ < static_cast<int>(servers_.size());
@@ -690,7 +690,7 @@ void AuthScreen::renderCard(auth::AuthHandler& authHandler, float screenW, float
                   : makeServerKey(hostname_.text(), port);
 
         int choice = known ? selectedServerIndex_ : static_cast<int>(servers_.size());
-        ui_.text(col.at(), "Server", labelSize, theme.inkSoft);
+        ui_.text(col.at(), "Servidor", labelSize, theme.inkSoft);
         col.gap(labelRow);
         const auto [a, b] = col.row(px(kFieldHeight));
         if (ui_.dropdown("servers", a, b, preview, rows, &choice)) {
@@ -709,8 +709,8 @@ void AuthScreen::renderCard(auth::AuthHandler& authHandler, float screenW, float
 
     {
         PaperUI::FieldOpts opts;
-        opts.placeholder = "account name";
-        const PaperUI::FieldResult r = labelledField("Account", "account", username_, opts);
+        opts.placeholder = "nome da conta";
+        const PaperUI::FieldResult r = labelledField("Conta", "account", username_, opts);
         if (r.changed) statusProminent = false;
         if (r.submitted) ui_.focus("password");
     }
@@ -718,7 +718,7 @@ void AuthScreen::renderCard(auth::AuthHandler& authHandler, float screenW, float
     {
         // The eye sits on the label row, right-aligned, so the box itself is
         // the same shape as the one above it.
-        ui_.text(col.at(), "Password", labelSize, theme.inkSoft);
+        ui_.text(col.at(), "Senha", labelSize, theme.inkSoft);
         const float eyeR = labelSize * 0.72f;
         if (ui_.glyphButton("reveal", ImVec2(col.x1 - eyeR, col.y + labelSize * 0.5f), eyeR,
                             showPassword ? PaperUI::Glyph::Eye : PaperUI::Glyph::EyeClosed)) {
@@ -730,7 +730,7 @@ void AuthScreen::renderCard(auth::AuthHandler& authHandler, float screenW, float
         const auto [a, b] = col.row(px(kFieldHeight));
         PaperUI::FieldOpts opts;
         opts.password = !showPassword;
-        opts.placeholder = "password";
+        opts.placeholder = "senha";
         const PaperUI::FieldResult r = ui_.field("password", a, b, password_, opts);
         col.gap(px(kRowGap));
 
@@ -747,9 +747,9 @@ void AuthScreen::renderCard(auth::AuthHandler& authHandler, float screenW, float
     }
 
     if (codeInMain) {
-        ui_.text(col.at(), "Security code", labelSize, theme.inkSoft);
+        ui_.text(col.at(), "Código de segurança", labelSize, theme.inkSoft);
         ui_.textRight(col.x1, col.y + (labelSize - smallSize) * 0.5f,
-                      authState == auth::AuthState::AUTHENTICATOR_REQUIRED ? "authenticator"
+                      authState == auth::AuthState::AUTHENTICATOR_REQUIRED ? "autenticador"
                                                                            : "PIN",
                       smallSize, theme.pencil);
         col.gap(labelRow);
@@ -757,7 +757,7 @@ void AuthScreen::renderCard(auth::AuthHandler& authHandler, float screenW, float
         PaperUI::FieldOpts opts;
         opts.password = true;
         opts.digitsOnly = true;
-        opts.placeholder = "code";
+        opts.placeholder = "código";
         const PaperUI::FieldResult r = ui_.field("pin", a, b, pinCode_, opts);
         col.gap(px(kRowGap));
         if (r.submitted) submit = true;
@@ -778,7 +778,7 @@ void AuthScreen::renderCard(auth::AuthHandler& authHandler, float screenW, float
         rows.reserve(assets.size());
         for (const AssetChoice& one : assets) rows.push_back(one.label);
 
-        ui_.text(col.at(), "Assets", labelSize, theme.inkSoft);
+        ui_.text(col.at(), "Arquivos", labelSize, theme.inkSoft);
         col.gap(labelRow);
         const auto [a, b] = col.row(px(kFieldHeight));
         if (ui_.dropdown("assets", a, b, rows[static_cast<size_t>(choice)], rows, &choice)) {
@@ -788,7 +788,7 @@ void AuthScreen::renderCard(auth::AuthHandler& authHandler, float screenW, float
         }
         col.gap(px(kRowGap));
         if (!assetProfileId_.empty()) {
-            ui_.text(col.at(), "Cross-expansion DBC and model formats may differ.", smallSize,
+            ui_.text(col.at(), "Formatos DBC e modelos podem variar entre expansões.", smallSize,
                      theme.pencil);
             col.gap(smallRow + px(4));
         }
@@ -819,19 +819,19 @@ void AuthScreen::renderCard(auth::AuthHandler& authHandler, float screenW, float
         char label[64];
         bool enabled = true;
         if (codeInMain) {
-            std::snprintf(label, sizeof(label), "Submit Code");
+            std::snprintf(label, sizeof(label), "Enviar código");
         } else if (authenticating) {
-            std::snprintf(label, sizeof(label), "Connecting  %.0fs", authTimer);
+            std::snprintf(label, sizeof(label), "Conectando  %.0fs", authTimer);
             enabled = false;
         } else {
-            std::snprintf(label, sizeof(label), "Log In");
+            std::snprintf(label, sizeof(label), "Entrar");
         }
         if (ui_.button("login", a, b, label, PaperUI::ButtonKind::Primary, enabled)) submit = true;
     }
 
     // ---- the disclosure --------------------------------------------------
     {
-        const char* label = advancedOpen_ ? "fewer options" : "more options";
+        const char* label = advancedOpen_ ? "menos opções" : "mais opções";
         const float w = ui_.textWidth(label, smallSize);
         if (ui_.link("advanced", ImVec2(centreX - w * 0.5f, col.y), label, smallSize)) {
             advancedOpen_ = !advancedOpen_;
@@ -856,8 +856,8 @@ void AuthScreen::renderCard(auth::AuthHandler& authHandler, float screenW, float
             const float portW = px(84);
             const float gap = px(12);
             const float hostW = contentW - portW - gap;
-            ui_.text(col.at(), "Address", labelSize, theme.inkSoft);
-            ui_.text(ImVec2(col.x0 + hostW + gap, col.y), "Port", labelSize, theme.inkSoft);
+            ui_.text(col.at(), "Endereço", labelSize, theme.inkSoft);
+            ui_.text(ImVec2(col.x0 + hostW + gap, col.y), "Porta", labelSize, theme.inkSoft);
             col.gap(labelRow);
 
             const float y = col.y;
@@ -889,7 +889,7 @@ void AuthScreen::renderCard(auth::AuthHandler& authHandler, float screenW, float
         if (haveExpansions) {
             const auto& profiles = registry->getAllProfiles();
 
-            ui_.text(col.at(), "Expansion", labelSize, theme.inkSoft);
+            ui_.text(col.at(), "Expansão", labelSize, theme.inkSoft);
             col.gap(labelRow);
             std::vector<std::string> rows;
             rows.reserve(profiles.size());
@@ -898,7 +898,7 @@ void AuthScreen::renderCard(auth::AuthHandler& authHandler, float screenW, float
             const std::string preview =
                 (expansionIndex >= 0 && expansionIndex < static_cast<int>(profiles.size()))
                     ? rows[static_cast<size_t>(expansionIndex)]
-                    : std::string("choose one");
+                    : std::string("selecione uma");
             {
                 const auto [a, b] = col.row(px(kFieldHeight));
                 if (ui_.dropdown("expansion", a, b, preview, rows, &expansionIndex)) {
@@ -909,20 +909,20 @@ void AuthScreen::renderCard(auth::AuthHandler& authHandler, float screenW, float
             }
 
         } else {
-            ui_.text(col.at(), "Expansion: WotLK 3.3.5a (default)", smallSize, theme.pencil);
+            ui_.text(col.at(), "Expansão: WotLK 3.3.5a (padrão)", smallSize, theme.pencil);
             col.gap(smallRow + px(kRowGap));
         }
 
         if (codeInAdvanced) {
-            ui_.text(col.at(), "Security code", labelSize, theme.inkSoft);
-            ui_.textRight(col.x1, col.y + (labelSize - smallSize) * 0.5f, "if your realm asks",
+            ui_.text(col.at(), "Código de segurança", labelSize, theme.inkSoft);
+            ui_.textRight(col.x1, col.y + (labelSize - smallSize) * 0.5f, "se o servidor pedir",
                           smallSize, theme.pencil);
             col.gap(labelRow);
             const auto [a, b] = col.row(px(kFieldHeight));
             PaperUI::FieldOpts opts;
             opts.password = true;
             opts.digitsOnly = true;
-            opts.placeholder = "PIN or authenticator";
+            opts.placeholder = "PIN ou autenticador";
             if (ui_.field("pin", a, b, pinCode_, opts).submitted) submit = true;
             col.gap(px(kRowGap));
         }
@@ -939,7 +939,7 @@ void AuthScreen::renderCard(auth::AuthHandler& authHandler, float screenW, float
             // screen - a button's worth of height pushed the footer off the
             // bottom edge - and the panel it opens says all of this at the
             // top of itself. Same shape as the disclosure above it.
-            const char* label = "add or rebuild assets...";
+            const char* label = "adicionar ou recriar arquivos...";
             const float w = ui_.textWidth(label, smallSize);
             if (ui_.link("assets", ImVec2(centreX - w * 0.5f, col.y), label, smallSize)) {
                 core::Application::getInstance().setState(core::AppState::FIRST_RUN);
@@ -1134,7 +1134,7 @@ void AuthScreen::stopLoginMusic() {
 void AuthScreen::attemptAuth(auth::AuthHandler& authHandler) {
     // Validate inputs
     if (username_.empty()) {
-        setStatus("Enter an account name", true);
+        setStatus("Informe o nome da conta", true);
         return;
     }
 
@@ -1142,12 +1142,12 @@ void AuthScreen::attemptAuth(auth::AuthHandler& authHandler) {
     const bool useHash = usingStoredHash && password_.text() == PASSWORD_PLACEHOLDER;
 
     if (!useHash && password_.empty()) {
-        setStatus("Enter a password", true);
+        setStatus("Informe a senha", true);
         return;
     }
 
     if (hostname_.empty()) {
-        setStatus("Enter an address to connect to", true);
+        setStatus("Informe o endereço do servidor", true);
         return;
     }
 
@@ -1186,10 +1186,10 @@ void AuthScreen::beginAuthAttempt(auth::AuthHandler& authHandler) {
 
     std::stringstream ss;
     if (isRetry) {
-        ss << "Retrying " << hostname_.text() << ":" << port
-           << " with auth protocol " << static_cast<int>(protocolVersion) << "...";
+        ss << "Tentando novamente " << hostname_.text() << ":" << port
+           << " com protocolo de autenticação " << static_cast<int>(protocolVersion) << "...";
     } else {
-        ss << "Connecting to " << hostname_.text() << ":" << port << "...";
+        ss << "Conectando a " << hostname_.text() << ":" << port << "...";
     }
     setStatus(ss.str(), false);
 
@@ -1228,7 +1228,7 @@ void AuthScreen::beginAuthAttempt(auth::AuthHandler& authHandler) {
     if (authHandler.connect(hostname_.text(), static_cast<uint16_t>(port))) {
         authenticating = true;
         authTimer = 0.0f;
-        setStatus(isRetry ? "Reconnected, authenticating..." : "Connected, authenticating...", false);
+        setStatus(isRetry ? "Reconectado, autenticando..." : "Conectado, autenticando...", false);
         pinAutoSubmitted_ = false;
         securityPromptFocused_ = false;
 
@@ -1250,8 +1250,8 @@ void AuthScreen::beginAuthAttempt(auth::AuthHandler& authHandler) {
         pinCode_.clear();
     } else {
         std::stringstream errSs;
-        errSs << "Failed to connect to " << hostname_.text() << ":" << port
-              << " - check that the server is online and the address is correct";
+        errSs << "Não foi possível conectar a " << hostname_.text() << ":" << port
+              << " - verifique se o servidor está online e o endereço está correto";
         setStatus(errSs.str(), true);
         authenticating = false;
     }
@@ -1770,7 +1770,7 @@ void AuthScreen::renderLoginSettingsSheet(float screenW, float screenH) {
 
     Column col{a.x + px(kPad), b.x - px(kPad), a.y + px(kPad)};
 
-    ui_.text(col.at(), "Graphics", px(kTitle), theme.ink, /*titleFace=*/true);
+    ui_.text(col.at(), "Gráficos", px(kTitle), theme.ink, /*titleFace=*/true);
     {
         const float r = px(kSmall) * 0.95f;
         if (ui_.glyphButton("gfx.close", ImVec2(col.x1 - r, col.y + r), r,
@@ -1779,7 +1779,7 @@ void AuthScreen::renderLoginSettingsSheet(float screenW, float screenH) {
         }
     }
     col.gap(px(kTitle) * 1.05f);
-    ui_.text(col.at(), "These take effect the next time you log in.", px(kSmall), theme.pencil);
+    ui_.text(col.at(), "As alterações valem no próximo login.", px(kSmall), theme.pencil);
     col.gap(smallRow + px(8));
     ui_.rule(ImVec2(col.x0, col.y), ImVec2(col.x1, col.y), paperFade(theme.pencil, 0.6f),
              px(1.0f), 0x9A17u);
@@ -1787,9 +1787,9 @@ void AuthScreen::renderLoginSettingsSheet(float screenW, float screenH) {
 
     // ---- preset -----------------------------------------------------------
     {
-        ui_.text(col.at(), "Preset", px(kLabel), theme.inkSoft);
+        ui_.text(col.at(), "Perfil", px(kLabel), theme.inkSoft);
         col.gap(labelRow);
-        const std::vector<std::string> names = {"Custom", "Low", "Medium", "High", "Ultra"};
+        const std::vector<std::string> names = {"Personalizado", "Baixo", "Médio", "Alto", "Ultra"};
         int preset = std::clamp(loginGfx_.preset, 0, static_cast<int>(names.size()) - 1);
         const auto [pa, pb] = col.cell(0.0f, px(220), px(kControl));
         if (ui_.dropdown("gfx.preset", pa, pb, names[static_cast<size_t>(preset)], names,
@@ -1813,13 +1813,13 @@ void AuthScreen::renderLoginSettingsSheet(float screenW, float screenH) {
             ui_.checkbox(id, ImVec2(left.x0, left.y), px(kCheckBox), label, value);
             left.gap(px(kCheckStep));
         };
-        toggle("gfx.shadows", "Shadows", &loginGfx_.shadows);
+        toggle("gfx.shadows", "Sombras", &loginGfx_.shadows);
         toggle("gfx.fxaa", "FXAA", &loginGfx_.fxaa);
-        toggle("gfx.normals", "Normal mapping", &loginGfx_.normalMapping);
-        toggle("gfx.pom", "Parallax occlusion", &loginGfx_.pom);
-        toggle("gfx.water", "Water refraction", &loginGfx_.waterRefraction);
+        toggle("gfx.normals", "Mapeamento normal", &loginGfx_.normalMapping);
+        toggle("gfx.pom", "Relevo (POM)", &loginGfx_.pom);
+        toggle("gfx.water", "Refração da água", &loginGfx_.waterRefraction);
         toggle("gfx.vsync", "V-Sync", &loginGfx_.vsync);
-        toggle("gfx.fullscreen", "Fullscreen", &loginGfx_.fullscreen);
+        toggle("gfx.fullscreen", "Tela cheia", &loginGfx_.fullscreen);
     }
 
     // ---- the ranges -------------------------------------------------------
@@ -1832,18 +1832,18 @@ void AuthScreen::renderLoginSettingsSheet(float screenW, float screenH) {
         };
 
         {
-            const auto [ra, rb] = labelled("Anti-aliasing");
+            const auto [ra, rb] = labelled("Antisserrilhado");
             // The same four the settings schema offers. This list once had
             // three, so 8x could be set in the game, never shown here, and
             // silently rewritten by anything picked here instead.
-            const std::vector<std::string> names = {"Off", "2x MSAA", "4x MSAA", "8x MSAA"};
+            const std::vector<std::string> names = {"Desativado", "2x MSAA", "4x MSAA", "8x MSAA"};
             int aa = std::clamp(loginGfx_.antiAliasing, 0, 3);
             if (ui_.dropdown("gfx.aa", ra, rb, names[static_cast<size_t>(aa)], names, &aa))
                 loginGfx_.antiAliasing = aa;
             right.gap(px(8));
         }
         {
-            const auto [ra, rb] = labelled("Parallax quality");
+            const auto [ra, rb] = labelled("Qualidade do relevo");
             // The names and the count both come from the one scale, so this
             // cannot go back to offering two entries of a three-entry setting
             // and writing the wrong index for the ones it did offer.
@@ -1857,24 +1857,24 @@ void AuthScreen::renderLoginSettingsSheet(float screenW, float screenH) {
             right.gap(px(8));
         }
         {
-            const auto [ra, rb] = labelled("Shadow distance");
+            const auto [ra, rb] = labelled("Distância das sombras");
             ui_.sliderFloat("gfx.shadowdist", ra, rb, &loginGfx_.shadowDistance, 50.0f, 600.0f);
             right.gap(px(8));
         }
         {
-            const auto [ra, rb] = labelled("View distance");
+            const auto [ra, rb] = labelled("Distância de visão");
             ui_.sliderFloat("gfx.viewdist", ra, rb, &loginGfx_.viewDistance, 400.0f, 2400.0f);
             right.gap(px(8));
         }
         {
             // 150, not 200: GameScreen::loadSettings clamps there, so the last
             // fifty units of this slider were silently discarded at login.
-            const auto [ra, rb] = labelled("Ground clutter");
+            const auto [ra, rb] = labelled("Detalhes do terreno");
             ui_.sliderInt("gfx.clutter", ra, rb, &loginGfx_.groundClutter, 0, 150);
             right.gap(px(8));
         }
         {
-            const auto [ra, rb] = labelled("Brightness");
+            const auto [ra, rb] = labelled("Brilho");
             ui_.sliderInt("gfx.brightness", ra, rb, &loginGfx_.brightness, 0, 100);
             right.gap(px(8));
         }
@@ -1887,17 +1887,17 @@ void AuthScreen::renderLoginSettingsSheet(float screenW, float screenH) {
         const float y = col.y;
         const float bh = px(kButton);
         if (ui_.button("gfx.reset", ImVec2(col.x0, y), ImVec2(col.x0 + px(170), y + bh),
-                       "Reset to Medium")) {
+                       "Restaurar médio")) {
             applyPresetToState(loginGfx_, 2);
             loginGfx_.preset = 2;
         }
         const float applyW = px(130);
         const float cancelW = px(110);
         if (ui_.button("gfx.cancel", ImVec2(col.x1 - applyW - px(12) - cancelW, y),
-                       ImVec2(col.x1 - applyW - px(12), y + bh), "Cancel")) {
+                       ImVec2(col.x1 - applyW - px(12), y + bh), "Cancelar")) {
             settingsOpen_ = false;
         }
-        if (ui_.button("gfx.apply", ImVec2(col.x1 - applyW, y), ImVec2(col.x1, y + bh), "Apply",
+        if (ui_.button("gfx.apply", ImVec2(col.x1 - applyW, y), ImVec2(col.x1, y + bh), "Aplicar",
                        PaperUI::ButtonKind::Primary)) {
             saveLoginGraphicsState();
             if (services_.window && services_.window->isVsyncEnabled() != loginGfx_.vsync) {
