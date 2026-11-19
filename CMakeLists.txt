@@ -1484,6 +1484,16 @@ else()
     if(WOWEE_WARNINGS_AS_ERRORS)
         target_compile_options(wowee PRIVATE -Werror)
     endif()
+    # GCC 16 on MinGW can diagnose the std::vector inside std::optional's
+    # destruction as maybe-uninitialized when inlining Entity::setPosition().
+    # Keep reporting this warning, but do not make it a hard error on this
+    # toolchain until it has been investigated with runtime sanitizers.
+    # Other warnings remain errors. Do not disable the diagnostic entirely.
+    if(MINGW AND CMAKE_CXX_COMPILER_ID STREQUAL "GNU"
+       AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 16)
+        target_compile_options(wowee PRIVATE -Wno-error=maybe-uninitialized)
+        message(STATUS "MinGW GCC 16+: maybe-uninitialized warnings do not stop the build")
+    endif()
     # GCC LTO emits -Wodr for FFX enum-name mismatches across SDK generations.
     # We intentionally keep FSR2+FSR3 integrations in separate TUs and suppress
     # this linker-time diagnostic to avoid CI noise.
