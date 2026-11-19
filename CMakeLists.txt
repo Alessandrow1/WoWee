@@ -26,6 +26,9 @@ endif()
 # Options
 option(BUILD_SHARED_LIBS "Build shared libraries" OFF)
 option(WOWEE_BUILD_TESTS "Build tests" ON)
+# Keep upstream's optimized Release default, but allow local Windows builds
+# to skip expensive link-time optimization on large MinGW toolchains.
+option(WOWEE_ENABLE_LTO "Enable Release link-time optimization for the wowee executable" ON)
 option(WOWEE_ENABLE_ASAN "Enable AddressSanitizer + UBSan (applied to all build configs; pairs well with Debug)" OFF)
 option(WOWEE_ENABLE_TRACY "Enable Tracy profiler instrumentation" OFF)
 # AMD's FidelityFX SDK backends, off by default.
@@ -1579,8 +1582,10 @@ endif()
 # Release build optimizations
 include(CheckIPOSupported)
 check_ipo_supported(RESULT _ipo_supported OUTPUT _ipo_error)
-if(_ipo_supported)
+if(_ipo_supported AND WOWEE_ENABLE_LTO)
     set_property(TARGET wowee PROPERTY INTERPROCEDURAL_OPTIMIZATION_RELEASE TRUE)
+elseif(NOT WOWEE_ENABLE_LTO)
+    message(STATUS "WoWee Release LTO: OFF (faster Windows development links)")
 endif()
 if(NOT MSVC)
     # -O3: more aggressive inlining and auto-vectorization vs CMake's default -O2
