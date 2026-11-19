@@ -177,6 +177,28 @@ void UIManager::loadInterfaceFont(const std::string& dataRoot,
     namespace fs = std::filesystem;
     std::error_code ec;
 
+    // Windows font files may be virtualized or unreadable by MinGW's stream
+    // buffer. A failed optional font must never prevent the client from
+    // reaching its login screen (std::istreambuf_iterator can throw here).
+    const auto tryLoadFontBytes = [](const fs::path& path,
+                                     std::vector<uint8_t>& destination) -> bool {
+        try {
+            std::ifstream in(path, std::ios::binary);
+            if (!in) return false;
+            std::vector<uint8_t> bytes(std::istreambuf_iterator<char>{in},
+                                       std::istreambuf_iterator<char>{});
+            if (in.bad() || bytes.empty()) {
+                LOG_WARNING("Unable to read optional font: ", path.string());
+                return false;
+            }
+            destination = std::move(bytes);
+            return true;
+        } catch (const std::exception& ex) {
+            LOG_WARNING("Skipping unreadable font ", path.string(), ": ", ex.what());
+            return false;
+        }
+    };
+
     // Extracted data does not agree with itself about case, and this path is
     // reached directly rather than through the asset manager's manifest.
     //
@@ -292,8 +314,7 @@ void UIManager::loadInterfaceFont(const std::string& dataRoot,
     // window has an atlas of its own and would otherwise search for it again.
     clientFontSize_ = kClientSize / (atlasScale > 0.0f ? atlasScale : 1.0f);
     if (!frizqt.empty()) {
-        std::ifstream in(frizqt, std::ios::binary);
-        clientFontData_.assign(std::istreambuf_iterator<char>(in), std::istreambuf_iterator<char>());
+        tryLoadFontBytes(frizqt, clientFontData_);
     } else if (assets) {
         clientFontData_ = assets->readFileOptional("Fonts\\FRIZQT__.TTF");
     }
@@ -356,9 +377,7 @@ void UIManager::loadInterfaceFont(const std::string& dataRoot,
         for (const char* name : { "arkai_t.ttf", "bhei00m.ttf", "2002.ttf" }) {
             const fs::path file = resolve(name);
             if (!file.empty()) {
-                std::ifstream in(file, std::ios::binary);
-                cjkFontData_.assign(std::istreambuf_iterator<char>(in),
-                                    std::istreambuf_iterator<char>());
+                tryLoadFontBytes(file, cjkFontData_);
             } else if (assets) {
                 std::string upper(name);
                 for (char& c : upper) c = static_cast<char>(std::toupper(static_cast<unsigned char>(c)));
@@ -378,9 +397,7 @@ void UIManager::loadInterfaceFont(const std::string& dataRoot,
                  "/system/fonts/NotoSansCJK-Regular.ttc" }) {
             if (!cjkFontData_.empty()) break;
             if (!fs::exists(path, ec)) continue;
-            std::ifstream in(path, std::ios::binary);
-            cjkFontData_.assign(std::istreambuf_iterator<char>(in),
-                                std::istreambuf_iterator<char>());
+            tryLoadFontBytes(path, cjkFontData_);
             if (!cjkFontData_.empty()) from = path;
         }
         if (cjkFontData_.empty()) {
@@ -399,9 +416,7 @@ void UIManager::loadInterfaceFont(const std::string& dataRoot,
                      "/System/Library/Fonts/AppleSDGothicNeo.ttc",
                      "C:\\Windows\\Fonts\\malgun.ttf" }) {
                 if (!fs::exists(path, ec)) continue;
-                std::ifstream in(path, std::ios::binary);
-                hangulFontData_.assign(std::istreambuf_iterator<char>(in),
-                                       std::istreambuf_iterator<char>());
+                tryLoadFontBytes(path, hangulFontData_);
                 if (!hangulFontData_.empty()) {
                     LOG_INFO("Korean fallback font: ", path);
                     break;
