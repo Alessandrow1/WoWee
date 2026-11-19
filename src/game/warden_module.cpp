@@ -1505,11 +1505,10 @@ bool WardenModule::initializeModule() {
         }
 
     #elif defined(_WIN32)
-        // Native Windows execution (dangerous without sandboxing)
-        typedef void* (*ModuleEntryPoint)(ClientCallbacks*);
-        ModuleEntryPoint entryPoint = reinterpret_cast<ModuleEntryPoint>(moduleMemory_);
-
-        LOG_INFO("WardenModule: Calling module entry point at ", moduleMemory_);
+        // Native Windows execution is disabled until a safe sandbox is available.
+        // Keep the module pointer only for diagnostics; do not form an unused
+        // function pointer or imply that this path executes the module.
+        LOG_INFO("WardenModule: Module entry point at ", moduleMemory_);
 
         // NOTE: This would execute native x86 code
         // Extremely dangerous without proper validation!
