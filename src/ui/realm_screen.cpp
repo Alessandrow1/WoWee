@@ -32,15 +32,15 @@ const char* RealmScreen::getRealmType(uint8_t icon) {
         case 1: return "PvP";
         case 6: return "RP";
         case 8: return "RP-PvP";
-        default: return "Other";
+        default: return "Outro";
     }
 }
 
 const char* RealmScreen::getPopulationName(float population) {
-    if (population < 0.5f) return "Low";
-    if (population < 1.5f) return "Medium";
-    if (population < 2.5f) return "High";
-    return "Full";
+    if (population < 0.5f) return "Baixa";
+    if (population < 1.5f) return "Média";
+    if (population < 2.5f) return "Alta";
+    return "Lotada";
 }
 
 void RealmScreen::render(auth::AuthHandler& authHandler) {
@@ -71,7 +71,7 @@ void RealmScreen::render(auth::AuthHandler& authHandler) {
             realmSelected = true;
             selectedRealmName = realms[0].name;
             selectedRealmAddress = realms[0].address;
-            setStatus("Auto-selecting realm: " + realms[0].name);
+            setStatus("Selecionando reino automaticamente: " + realms[0].name);
             if (onRealmSelected) {
                 onRealmSelected(selectedRealmName, selectedRealmAddress);
             }
@@ -96,14 +96,14 @@ void RealmScreen::render(auth::AuthHandler& authHandler) {
     Column col{a.x + px(kPad), b.x - px(kPad), a.y + px(kPad)};
 
     // ---- heading ----------------------------------------------------------
-    ui_.text(col.at(), "Choose a Realm", titleSize, theme.ink, /*titleFace=*/true);
+    ui_.text(col.at(), "Escolha um reino", titleSize, theme.ink, /*titleFace=*/true);
     {
-        const float w = ui_.textWidth("Choose a Realm", titleSize, true);
+        const float w = ui_.textWidth("Escolha um reino", titleSize, true);
         const float y = col.y + ui_.inkHeight(titleSize, true);
         ui_.squiggle(ImVec2(col.x0, y), ImVec2(col.x0 + w * 1.04f, y), theme.crayonRed,
                      px(2.0f), 0x3311u);
     }
-    ui_.textRight(col.x1, col.y + titleSize * 0.55f, "Where your characters live.", smallSize,
+    ui_.textRight(col.x1, col.y + titleSize * 0.55f, "Onde seus personagens vivem.", smallSize,
                   theme.pencil);
     col.gap(ui_.inkHeight(titleSize, true) + px(18));
 
@@ -127,10 +127,10 @@ void RealmScreen::render(auth::AuthHandler& authHandler) {
     const float charX = col.x0 + col.width() * 0.74f;
     const float statusX = col.x0 + col.width() * 0.86f;
 
-    ui_.text(ImVec2(col.x0 + px(10), col.y), "Realm", labelSize, theme.inkSoft);
-    ui_.text(ImVec2(typeX, col.y), "Type", labelSize, theme.inkSoft);
-    ui_.text(ImVec2(popX, col.y), "Population", labelSize, theme.inkSoft);
-    ui_.text(ImVec2(charX, col.y), "Yours", labelSize, theme.inkSoft);
+    ui_.text(ImVec2(col.x0 + px(10), col.y), "Reino", labelSize, theme.inkSoft);
+    ui_.text(ImVec2(typeX, col.y), "Tipo", labelSize, theme.inkSoft);
+    ui_.text(ImVec2(popX, col.y), "População", labelSize, theme.inkSoft);
+    ui_.text(ImVec2(charX, col.y), "Seus", labelSize, theme.inkSoft);
     ui_.text(ImVec2(statusX, col.y), "Status", labelSize, theme.inkSoft);
     ui_.rule(ImVec2(col.x0, listTop - px(4)), ImVec2(col.x1, listTop - px(4)),
              paperFade(theme.ink, 0.5f), px(1.3f), 0x8842u);
@@ -139,13 +139,13 @@ void RealmScreen::render(auth::AuthHandler& authHandler) {
         realmSelected = true;
         selectedRealmName = realm.name;
         selectedRealmAddress = realm.address;
-        setStatus("Connecting to realm: " + realm.name);
+        setStatus("Conectando ao reino: " + realm.name);
         if (onRealmSelected) onRealmSelected(selectedRealmName, selectedRealmAddress);
     };
 
     if (realms.empty()) {
         ui_.text(ImVec2(col.x0 + px(10), listTop + px(14)),
-                 "No realms yet. Asking the server for the list...", bodySize, theme.pencil);
+                 "Nenhum reino encontrado. Solicitando a lista ao servidor...", bodySize, theme.pencil);
         authHandler.requestRealmList();
     } else {
         const PaperUI::ListResult picked = ui_.list(
@@ -173,7 +173,7 @@ void RealmScreen::render(auth::AuthHandler& authHandler) {
                 }
 
                 if (realm.lock) {
-                    ui_.text(ImVec2(statusX, smallY), "Locked", smallSize, theme.crayonRed);
+                    ui_.text(ImVec2(statusX, smallY), "Bloqueado", smallSize, theme.crayonRed);
                 } else {
                     ui_.text(ImVec2(statusX, smallY), getRealmStatus(realm.flags), smallSize,
                              theme.crayonGreen);
@@ -201,19 +201,19 @@ void RealmScreen::render(auth::AuthHandler& authHandler) {
         std::string line = realm.name + "   " + realm.address;
         if (realm.characters > 0) {
             char suffix[64];
-            std::snprintf(suffix, sizeof(suffix), "   %d character%s here", realm.characters,
+            std::snprintf(suffix, sizeof(suffix), "   %d personagem%s aqui", realm.characters,
                           realm.characters > 1 ? "s" : "");
             line += suffix;
         }
         if (realm.hasVersionInfo() && (realm.majorVersion || realm.build)) {
             char version[64];
-            std::snprintf(version, sizeof(version), "   v%d.%d.%d build %d", realm.majorVersion,
+            std::snprintf(version, sizeof(version), "   v%d.%d.%d compilação %d", realm.majorVersion,
                           realm.minorVersion, realm.patchVersion, realm.build);
             line += version;
         }
         ui_.text(col.at(), line.c_str(), smallSize, theme.inkSoft);
     } else {
-        ui_.text(col.at(), "Pick a realm, or double-click one to go straight in.", smallSize,
+        ui_.text(col.at(), "Escolha um reino ou dê dois cliques para entrar.", smallSize,
                  theme.pencil);
     }
     col.gap(ui_.lineHeight(smallSize) + px(8));
@@ -222,20 +222,20 @@ void RealmScreen::render(auth::AuthHandler& authHandler) {
         const float y = col.y;
         const float h = px(kButtonH);
         const float w = px(110);
-        if (ui_.button("back", ImVec2(col.x0, y), ImVec2(col.x0 + w, y + h), "Back")) {
+        if (ui_.button("back", ImVec2(col.x0, y), ImVec2(col.x0 + w, y + h), "Voltar")) {
             if (onBack) onBack();
         }
         if (ui_.button("refresh", ImVec2(col.x0 + w + px(12), y),
-                       ImVec2(col.x0 + w * 2.0f + px(12), y + h), "Refresh")) {
+                       ImVec2(col.x0 + w * 2.0f + px(12), y + h), "Atualizar")) {
             authHandler.requestRealmList();
-            setStatus("Refreshing realm list...");
+            setStatus("Atualizando lista de reinos...");
         }
 
         if (haveSelection) {
             const auto& realm = realms[static_cast<size_t>(selectedRealmIndex)];
             const float enterW = px(190);
             if (ui_.button("enter", ImVec2(col.x1 - enterW, y), ImVec2(col.x1, y + h),
-                           realm.lock ? "Realm Locked" : "Enter Realm",
+                           realm.lock ? "Reino bloqueado" : "Entrar no reino",
                            PaperUI::ButtonKind::Primary, !realm.lock)) {
                 enterRealm(realm);
             }
@@ -250,12 +250,12 @@ void RealmScreen::setStatus(const std::string& message) {
 }
 
 const char* RealmScreen::getRealmStatus(uint8_t flags) const {
-    if (flags & 0x02) return "Offline";
-    if (flags & 0x01) return "Invalid";
-    if (flags & 0x80) return "Full";
-    if (flags & 0x40) return "New";
-    if (flags & 0x20) return "Recommended";
-    return "Online";
+    if (flags & 0x02) return "Desconectado";
+    if (flags & 0x01) return "Inválido";
+    if (flags & 0x80) return "Lotada";
+    if (flags & 0x40) return "Novo";
+    if (flags & 0x20) return "Recomendado";
+    return "Disponível";
 }
 
 ImVec4 RealmScreen::getPopulationColor(float population) const {
