@@ -1,6 +1,7 @@
 #include "ui/character_create_screen.hpp"
 #include "core/logger.hpp"
 #include "ui/ui_colors.hpp"
+#include "ui/pt_br_character_names.hpp"
 #include "rendering/character_preview.hpp"
 #include "rendering/renderer.hpp"
 #include "core/application.hpp"
@@ -197,7 +198,7 @@ void CharacterCreateScreen::update(float deltaTime) {
         createTimer_ += deltaTime;
         if (createTimer_ > 10.0f) {
             createTimer_ = -1.0f;
-            setStatus("Server did not respond. Try again.", true);
+            setStatus("O servidor não respondeu. Tente novamente.", true);
         }
     }
 }
@@ -449,14 +450,14 @@ void CharacterCreateScreen::render(game::GameHandler& /*gameHandler*/) {
     Column page{a.x + px(kPad), b.x - px(kPad), a.y + px(kPad)};
 
     // ---- heading ----------------------------------------------------------
-    ui_.text(page.at(), "Create a Hero", titleSize, theme.ink, /*titleFace=*/true);
+    ui_.text(page.at(), "Criar herói", titleSize, theme.ink, /*titleFace=*/true);
     {
-        const float w = ui_.textWidth("Create a Hero", titleSize, true);
+        const float w = ui_.textWidth("Criar herói", titleSize, true);
         const float y = page.y + ui_.inkHeight(titleSize, true);
         ui_.squiggle(ImVec2(page.x0, y), ImVec2(page.x0 + w * 1.04f, y), theme.crayonRed,
                      px(2.0f), 0x7731u);
     }
-    ui_.textRight(page.x1, page.y + titleSize * 0.55f, "Who are you going to be?", smallSize,
+    ui_.textRight(page.x1, page.y + titleSize * 0.55f, "Quem você vai ser?", smallSize,
                   theme.pencil);
     page.gap(ui_.inkHeight(titleSize, true) + px(18));
 
@@ -508,10 +509,10 @@ void CharacterCreateScreen::render(game::GameHandler& /*gameHandler*/) {
             }
         }
         ui_.textCentered(page.x0 + previewW * 0.5f, imgB.y + mat + px(4),
-                         "Drag to turn  -  scroll to zoom", smallSize, theme.pencil);
+                         "Arraste para girar  -  role para ampliar", smallSize, theme.pencil);
     } else {
         ui_.textCentered(page.x0 + previewW * 0.5f, bodyTop + px(20),
-                         "No picture yet.", bodySize, theme.pencil);
+                         "Prévia indisponível.", bodySize, theme.pencil);
     }
 
     // ---- who they are -----------------------------------------------------
@@ -539,14 +540,14 @@ void CharacterCreateScreen::render(game::GameHandler& /*gameHandler*/) {
         who.y = flowY + chipH + trailingGap;
     };
 
-    ui_.text(who.at(), "Name", labelSize, theme.inkSoft);
-    ui_.textRight(who.x1, who.y + (labelSize - smallSize) * 0.5f, "12 letters", smallSize,
+    ui_.text(who.at(), "Nome", labelSize, theme.inkSoft);
+    ui_.textRight(who.x1, who.y + (labelSize - smallSize) * 0.5f, "Até 12 letras", smallSize,
                   theme.pencil);
     who.gap(labelRow);
     {
         const auto [fa, fb] = who.row(px(kFieldHeight));
         PaperUI::FieldOpts opts;
-        opts.placeholder = "name your hero";
+        opts.placeholder = "Nome do personagem";
         const PaperUI::FieldResult r = ui_.field("name", fa, fb, name_, opts);
         if (r.changed && statusIsError) setStatus("", false);
         who.gap(px(14));
@@ -562,11 +563,11 @@ void CharacterCreateScreen::render(game::GameHandler& /*gameHandler*/) {
     };
 
     if (allianceRaceCount_ > 0) {
-        ui_.text(who.at(), "Alliance", labelSize, ui_.onPaper(kAllianceColour));
+        ui_.text(who.at(), "Aliança", labelSize, ui_.onPaper(kAllianceColour));
         who.gap(labelRow);
         beginFlow();
         for (int i = 0; i < allianceRaceCount_; ++i) {
-            if (pill(game::getRaceName(availableRaces_[static_cast<size_t>(i)]), raceIndex == i,
+            if (pill(ptbr::raceName(availableRaces_[static_cast<size_t>(i)]), raceIndex == i,
                      kAllianceColour)) {
                 pickRace(i);
             }
@@ -574,11 +575,11 @@ void CharacterCreateScreen::render(game::GameHandler& /*gameHandler*/) {
         endFlow(px(12));
     }
     if (allianceRaceCount_ < raceCount) {
-        ui_.text(who.at(), "Horde", labelSize, ui_.onPaper(kHordeColour));
+        ui_.text(who.at(), "Horda", labelSize, ui_.onPaper(kHordeColour));
         who.gap(labelRow);
         beginFlow();
         for (int i = allianceRaceCount_; i < raceCount; ++i) {
-            if (pill(game::getRaceName(availableRaces_[static_cast<size_t>(i)]), raceIndex == i,
+            if (pill(ptbr::raceName(availableRaces_[static_cast<size_t>(i)]), raceIndex == i,
                      kHordeColour)) {
                 pickRace(i);
             }
@@ -586,16 +587,16 @@ void CharacterCreateScreen::render(game::GameHandler& /*gameHandler*/) {
         endFlow(px(14));
     }
 
-    ui_.text(who.at(), "Class", labelSize, theme.inkSoft);
+    ui_.text(who.at(), "Classe", labelSize, theme.inkSoft);
     who.gap(labelRow);
     if (availableClasses.empty()) {
-        ui_.text(who.at(), "No class this race can be.", smallSize, theme.crayonRed);
+        ui_.text(who.at(), "Nenhuma classe disponível para esta raça.", smallSize, theme.crayonRed);
         who.gap(ui_.lineHeight(smallSize) + px(14));
     } else {
         beginFlow();
         for (int i = 0; i < static_cast<int>(availableClasses.size()); ++i) {
             const auto cls = availableClasses[static_cast<size_t>(i)];
-            if (pill(game::getClassName(cls), classIndex == i,
+            if (pill(ptbr::className(cls), classIndex == i,
                      ui::getClassColor(static_cast<uint8_t>(cls)))) {
                 classIndex = i;
             }
@@ -603,11 +604,11 @@ void CharacterCreateScreen::render(game::GameHandler& /*gameHandler*/) {
         endFlow(px(14));
     }
 
-    ui_.text(who.at(), "Gender", labelSize, theme.inkSoft);
+    ui_.text(who.at(), "Gênero", labelSize, theme.inkSoft);
     who.gap(labelRow);
     beginFlow();
-    if (pill("Male", genderIndex == 0, kAllianceColour)) genderIndex = 0;
-    if (pill("Female", genderIndex == 1, kHordeColour)) genderIndex = 1;
+    if (pill("Masculino", genderIndex == 0, kAllianceColour)) genderIndex = 0;
+    if (pill("Feminino", genderIndex == 1, kHordeColour)) genderIndex = 1;
     endFlow(px(12));
 
     // TODO(server): Re-enable the nonbinary option and the body-type controls
@@ -623,7 +624,7 @@ void CharacterCreateScreen::render(game::GameHandler& /*gameHandler*/) {
     const game::Gender currentGender = static_cast<game::Gender>(genderIndex);
 
     Column look{appearanceX, appearanceX + appearanceW, bodyTop};
-    ui_.text(look.at(), "Appearance", px(22), theme.ink, /*titleFace=*/true);
+    ui_.text(look.at(), "Aparência", px(22), theme.ink, /*titleFace=*/true);
     look.gap(px(30));
 
     const auto appearanceSlider = [&](const char* id, const char* label, int* value, int maxVal) {
@@ -635,17 +636,17 @@ void CharacterCreateScreen::render(game::GameHandler& /*gameHandler*/) {
         if (maxVal > 0) {
             ui_.sliderInt(id, sa, sb, value, 0, maxVal);
         } else {
-            ui_.text(ImVec2(sa.x, sa.y + px(6)), "only one to choose from", smallSize,
+            ui_.text(ImVec2(sa.x, sa.y + px(6)), "Apenas uma opção", smallSize,
                      theme.pencil);
         }
         look.gap(px(10));
     };
 
-    appearanceSlider("look.skin", "Skin", &skin, maxSkin);
-    appearanceSlider("look.face", "Face", &face, maxFace);
-    appearanceSlider("look.hairstyle", "Hair style", &hairStyle, maxHairStyle);
-    appearanceSlider("look.haircolor", "Hair colour", &hairColor, maxHairColor);
-    appearanceSlider("look.facialhair", "Facial feature", &facialHair, maxFacialHair);
+    appearanceSlider("look.skin", "Pele", &skin, maxSkin);
+    appearanceSlider("look.face", "Rosto", &face, maxFace);
+    appearanceSlider("look.hairstyle", "Penteado", &hairStyle, maxHairStyle);
+    appearanceSlider("look.haircolor", "Cor do cabelo", &hairColor, maxHairColor);
+    appearanceSlider("look.facialhair", "Detalhe facial", &facialHair, maxFacialHair);
 
     // Skin and hairstyle choose the valid face/color subsets. Refresh now so a
     // Create click in this same frame sends IDs from the newly selected subset.
@@ -661,8 +662,8 @@ void CharacterCreateScreen::render(game::GameHandler& /*gameHandler*/) {
         ui_.text(page.at(), statusMessage.c_str(), smallSize,
                  statusIsError ? theme.crayonRed : theme.crayonGreen);
     } else {
-        ui_.text(page.at(), "Pick a race, then a class it can be. Names may run to twelve "
-                            "letters.", smallSize, theme.pencil);
+        ui_.text(page.at(), "Escolha uma raça e uma classe disponível. O nome pode ter até 12 "
+                            "letras.", smallSize, theme.pencil);
     }
     page.gap(ui_.lineHeight(smallSize) + px(8));
 
@@ -677,15 +678,15 @@ void CharacterCreateScreen::render(game::GameHandler& /*gameHandler*/) {
             name = name.substr(start, end - start + 1);
         }
         if (name.empty()) {
-            setStatus("Give your hero a name first.", true);
+            setStatus("Dê um nome ao personagem primeiro.", true);
             ui_.focus("name");
             return;
         }
         if (availableClasses.empty()) {
-            setStatus("No valid class for this race.", true);
+            setStatus("Nenhuma classe válida para esta raça.", true);
             return;
         }
-        setStatus("Creating character...", false);
+        setStatus("Criando personagem...", false);
         createTimer_ = 0.0f;
         game::CharCreateData data;
         data.name = name;
@@ -707,13 +708,13 @@ void CharacterCreateScreen::render(game::GameHandler& /*gameHandler*/) {
         const float y = page.y;
         const float h = px(kButtonH);
         if (ui_.button("create.back", ImVec2(page.x0, y), ImVec2(page.x0 + px(110), y + h),
-                       "Back")) {
+                       "Voltar")) {
             if (onCancel) onCancel();
         }
         const float createW = px(210);
         const bool waiting = (createTimer_ >= 0.0f);
         if (ui_.button("create.go", ImVec2(page.x1 - createW, y), ImVec2(page.x1, y + h),
-                       waiting ? "Creating..." : "Create Hero",
+                       waiting ? "Criando..." : "Criar herói",
                        PaperUI::ButtonKind::Primary, !waiting)) {
             submit();
         }
