@@ -34,11 +34,14 @@ echo "Configurando CMake em build/nosso-cliente-mingw64 ..."
 cmake -S . -B build/nosso-cliente-mingw64 -G Ninja \
   -DCMAKE_BUILD_TYPE=Release \
   -DWOWEE_BUILD_TESTS=OFF \
+  -DWOWEE_ENABLE_LTO=OFF \
   -DWOWEE_ENABLE_AMD_FSR2=OFF \
   -DWOWEE_ENABLE_AMD_FSR3_FRAMEGEN=OFF
 
-echo "Compilando com no maximo 4 tarefas paralelas ..."
-cmake --build build/nosso-cliente-mingw64 --parallel 4
+echo "Compilando o wowee.exe com no maximo 4 tarefas paralelas ..."
+echo "Nota: mudar LTO de ON para OFF exige recompilar os objetos do executavel uma vez."
+echo "Na etapa de link o Ninja pode ficar sem imprimir novas linhas; nao interrompa."
+cmake --build build/nosso-cliente-mingw64 --target wowee --parallel 4
 
 echo "Compilacao terminou. Localize o executavel:"
 find build/nosso-cliente-mingw64 -type f \( -iname 'wowee.exe' -o -iname 'wowee_assets.exe' \) -print
