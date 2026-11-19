@@ -95,6 +95,19 @@ inline bool holdsExtraction(const std::filesystem::path& dataRoot) {
     return !installedExpansions(dataRoot).empty();
 }
 
+    
+/// The client and asset manager must agree about where an extraction lives.
+/// Respect an explicit override, prefer the per-user output when populated,
+/// and fall back to the checkout's bundled Data/ protocol tables.
+inline std::filesystem::path activeDataRoot() {
+    if (const char* configured = std::getenv("WOW_DATA_PATH"); configured && *configured) {
+        return std::filesystem::path(configured);
+    }
+    const std::filesystem::path userRoot = userDataRoot();
+    if (!userRoot.empty() && holdsExtraction(userRoot)) return userRoot;
+    return std::filesystem::path("./Data");
+}
+
 /// `path` with its file name matched to what is on disk without regard to
 /// case, or `path` unchanged when nothing matches. A client copied to Linux
 /// is often lowercased, and a lookup by the exact name found nothing there.
@@ -128,12 +141,10 @@ inline std::string resolveFileIgnoreCase(const std::string& path) {
 /// the asset builder writes, so an extraction it made was never found by them.
 inline std::vector<std::string> extractionRoots() {
     namespace fs = std::filesystem;
-    std::vector<std::string> roots;
-    if (const char* d = std::getenv("WOW_DATA_PATH"); d != nullptr && *d != '\0') {
-        roots.emplace_back(d);
-    }
+    const fs::path selectedRoot = activeDataRoot();
+    std::vector<std::string> roots{selectedRoot.string()};
     std::error_code ec;
-    if (roots.empty() || !fs::equivalent(roots.front(), "Data", ec)) roots.emplace_back("Data");
+    if (!fs::equivalent(selectedRoot, "Data", ec)) roots.emplace_back("Data");
     return roots;
 }
 
