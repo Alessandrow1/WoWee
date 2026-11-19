@@ -260,8 +260,13 @@ std::vector<uint8_t> AuthSessionPacket::computeAuthHash(
     std::vector<uint8_t> hashInput;
     hashInput.reserve(accountName.size() + 4 + 4 + 4 + sessionKey.size());
 
-    // Account name (as bytes)
-    hashInput.insert(hashInput.end(), accountName.begin(), accountName.end());
+    // Account name (as bytes). Append explicitly rather than using vector::insert
+    // with string iterators: GCC 16/MinGW can emit an incorrect -Wrestrict
+    // overlap diagnostic for that range-insert under -O3. This preserves the
+    // exact byte sequence required by the authentication protocol.
+    for (unsigned char byte : accountName) {
+        hashInput.push_back(byte);
+    }
 
     // 4 null bytes
     for (int i = 0; i < 4; ++i) {
