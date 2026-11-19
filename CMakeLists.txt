@@ -1484,15 +1484,16 @@ else()
     if(WOWEE_WARNINGS_AS_ERRORS)
         target_compile_options(wowee PRIVATE -Werror)
     endif()
-    # GCC 16 on MinGW can diagnose the std::vector inside std::optional's
-    # destruction as maybe-uninitialized when inlining Entity::setPosition().
-    # Keep reporting this warning, but do not make it a hard error on this
-    # toolchain until it has been investigated with runtime sanitizers.
-    # Other warnings remain errors. Do not disable the diagnostic entirely.
+    # GCC 16 on MinGW diagnoses an inline std::optional<std::vector<...>>
+    # destructor in movement_handler.cpp as maybe-uninitialized. Do not turn
+    # off this warning globally: keep it visible, but non-fatal for this one
+    # translation unit while its cause is investigated with runtime tests.
+    # A source-local flag also avoids rebuilding every other object in Ninja.
     if(MINGW AND CMAKE_CXX_COMPILER_ID STREQUAL "GNU"
        AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 16)
-        target_compile_options(wowee PRIVATE -Wno-error=maybe-uninitialized)
-        message(STATUS "MinGW GCC 16+: maybe-uninitialized warnings do not stop the build")
+        set_source_files_properties(src/game/movement_handler.cpp
+            PROPERTIES COMPILE_OPTIONS "-Wno-error=maybe-uninitialized")
+        message(STATUS "MinGW GCC 16+: movement_handler maybe-uninitialized warning is non-fatal")
     endif()
     # GCC LTO emits -Wodr for FFX enum-name mismatches across SDK generations.
     # We intentionally keep FSR2+FSR3 integrations in separate TUs and suppress
