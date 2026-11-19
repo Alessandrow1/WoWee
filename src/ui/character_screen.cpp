@@ -1,6 +1,7 @@
 #include "ui/character_screen.hpp"
 #include "game/equipment_hash.hpp"
 #include "ui/ui_colors.hpp"
+#include "ui/pt_br_character_names.hpp"
 #include "rendering/character_preview.hpp"
 #include "rendering/renderer.hpp"
 #include "pipeline/asset_manager.hpp"
@@ -207,9 +208,9 @@ void CharacterScreen::render(game::GameHandler& gameHandler) {
                 std::snprintf(level, sizeof(level), "%d", character.level);
                 ui_.text(ImVec2(levelX, smallY), level, smallSize,
                          selected ? theme.ink : theme.inkSoft);
-                ui_.text(ImVec2(raceX, smallY), game::getRaceName(character.race), smallSize,
+                ui_.text(ImVec2(raceX, smallY), ptbr::raceName(character.race), smallSize,
                          theme.inkSoft);
-                ui_.text(ImVec2(classX, smallY), game::getClassName(character.characterClass),
+                ui_.text(ImVec2(classX, smallY), ptbr::className(character.characterClass),
                          smallSize,
                          ui_.onPaper(classColor(static_cast<uint8_t>(character.characterClass))));
 
@@ -489,14 +490,14 @@ void CharacterScreen::renderDetails(game::GameHandler& gameHandler,
 
     char level[32];
     std::snprintf(level, sizeof(level), "Nível %d %s", character.level,
-                  game::getGenderName(character.gender));
+                  ptbr::genderName(character.gender));
     ui_.text(col.at(), level, bodySize, theme.inkSoft);
     col.gap(bodySize * 1.35f);
 
-    ui_.text(col.at(), game::getRaceName(character.race), bodySize, theme.inkSoft);
+    ui_.text(col.at(), ptbr::raceName(character.race), bodySize, theme.inkSoft);
     col.gap(bodySize * 1.35f);
 
-    ui_.text(col.at(), game::getClassName(character.characterClass), bodySize,
+    ui_.text(col.at(), ptbr::className(character.characterClass), bodySize,
              ui_.onPaper(classColor(static_cast<uint8_t>(character.characterClass))));
     col.gap(bodySize * 1.35f);
 
@@ -558,8 +559,8 @@ void CharacterScreen::renderDeleteConfirm(const game::Character& character, floa
         ui_.text(col.at(), "Excluir este herói?", px(26), theme.ink, /*titleFace=*/true);
         col.gap(px(30));
         std::snprintf(line, sizeof(line), "%s, nível %d %s %s.", character.name.c_str(),
-                      character.level, game::getRaceName(character.race),
-                      game::getClassName(character.characterClass));
+                      character.level, ptbr::raceName(character.race),
+                      ptbr::className(character.characterClass));
     }
     col.gap(ui_.wrapped(col.at(), col.width(), line, px(kBodySize), theme.inkSoft) + px(10));
 
