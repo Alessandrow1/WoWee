@@ -645,8 +645,10 @@ void AuthScreen::renderCard(auth::AuthHandler& authHandler, float screenW, float
     {
         const float titleSize = px(kTitleSize);
         const float top = col.y;
-        ui_.textCentered(centreX, top, "WoWee", titleSize, theme.ink, /*titleFace=*/true);
-        const float titleW = ui_.textWidth("WoWee", titleSize, true);
+        // Temporary visual marker for validating that the pt-BR build is running.
+        // Do not confuse it with the final product name.
+        ui_.textCentered(centreX, top, "WoWee PT-BR", titleSize, theme.ink, /*titleFace=*/true);
+        const float titleW = ui_.textWidth("WoWee PT-BR", titleSize, true);
         // Below the title's own descenders, which is further down than the
         // size names: a size is an em and the face draws taller than one.
         const float underlineY = top + ui_.inkHeight(titleSize, true) * 1.02f;
