@@ -361,9 +361,9 @@ bool Application::initialize() {
     // Create game handler with explicit service dependencies
     gameHandler = std::make_unique<game::GameHandler>(gameServices_);
 
-    // Try to get WoW data path from environment variable
-    const char* dataPathEnv = std::getenv("WOW_DATA_PATH");
-    std::string dataPath = dataPathEnv ? dataPathEnv : "./Data";
+    // Match the asset manager's per-user output unless WOW_DATA_PATH overrides it.
+    // A new development build without extracted assets still uses ./Data tables.
+    const std::string dataPath = core::activeDataRoot().string();
 
     // The client's own expansion tables, into the extraction it is about to
     // read them from. Without this an extraction in the per-user directory -
@@ -2493,8 +2493,7 @@ void Application::reloadExpansionData() {
 
     // Update expansion data path for CSV DBC lookups and clear DBC cache
     if (assetManager && !profile->dataPath.empty()) {
-        const char* dataPathEnv = std::getenv("WOW_DATA_PATH");
-        const std::string baseDataPath = dataPathEnv ? dataPathEnv : "./Data";
+        const std::string baseDataPath = core::activeDataRoot().string();
         const game::ExpansionProfile* assetProfile = profile;
         if (!assetExpansionOverrideId_.empty() &&
             assetExpansionOverrideId_ != "legacy") {
