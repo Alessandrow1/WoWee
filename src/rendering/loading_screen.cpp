@@ -20,16 +20,11 @@ namespace wowee {
 namespace rendering {
 
 LoadingScreen::LoadingScreen() {
-    // Prefer the two World of Legends loading illustrations. If the art has
-    // not been installed yet, retain the original screen as a safe fallback.
-    for (const char* path : {
-        "assets/world-of-legends-loading-adventure.png",
-        "assets/world-of-legends-loading-factions.png"
-    }) {
-        if (std::filesystem::exists(path))
-            imagePaths.emplace_back(path);
-    }
-    if (imagePaths.empty())
+    // User-supplied World of Legends loading art, kept byte-for-byte intact.
+    // Fall back gracefully until the original image is installed.
+    if (std::filesystem::exists("assets/world-of-legends-loading.jpg"))
+        imagePaths.emplace_back("assets/world-of-legends-loading.jpg");
+    else
         imagePaths.emplace_back("assets/krayonload.png");
 }
 
