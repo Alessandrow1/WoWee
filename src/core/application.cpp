@@ -258,7 +258,7 @@ bool Application::initialize() {
 
     // Create window
     WindowConfig windowConfig;
-    windowConfig.title = "Wowee";
+    windowConfig.title = "World of Legends";
     windowConfig.width = 1280;
     windowConfig.height = 720;
     // Pace rendering to the display by default. The old 240 FPS default kept
