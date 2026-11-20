@@ -11,6 +11,7 @@
 #include <random>
 #include <chrono>
 #include <cstdio>
+#include <filesystem>
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
@@ -19,7 +20,17 @@ namespace wowee {
 namespace rendering {
 
 LoadingScreen::LoadingScreen() {
-    imagePaths.emplace_back("assets/krayonload.png");
+    // Prefer the two World of Legends loading illustrations. If the art has
+    // not been installed yet, retain the original screen as a safe fallback.
+    for (const char* path : {
+        "assets/world-of-legends-loading-adventure.png",
+        "assets/world-of-legends-loading-factions.png"
+    }) {
+        if (std::filesystem::exists(path))
+            imagePaths.emplace_back(path);
+    }
+    if (imagePaths.empty())
+        imagePaths.emplace_back("assets/krayonload.png");
 }
 
 LoadingScreen::~LoadingScreen() {
