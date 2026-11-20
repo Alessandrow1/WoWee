@@ -632,7 +632,12 @@ void AuthScreen::renderCard(auth::AuthHandler& authHandler, float screenW, float
 
     const float cardW = px(kCardWidth);
     const float cardH = px(kCardPadTop) + contentH + px(kCardPadBottom);
-    const ImVec2 cardA((screenW - cardW) * 0.5f,
+    // Keep the World of Legends emblem visible on widescreen displays.
+    // The compact layout remains centered for narrow windows.
+    const float cardX = (screenW >= cardW * 2.1f)
+        ? std::max(px(20), screenW * 0.035f)
+        : (screenW - cardW) * 0.5f;
+    const ImVec2 cardA(cardX,
                        std::max(px(12), (screenH - cardH) * 0.48f));
     const ImVec2 cardB(cardA.x + cardW, cardA.y + cardH);
 
