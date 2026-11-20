@@ -114,6 +114,7 @@ void AuthScreen::seedKnownServers() {
         const char* expansionId;
     };
     static constexpr Known kKnown[] = {
+        {"World of Legends", "127.0.0.1", 3724, "wotlk"},
         {"ChromieCraft", "logon.chromiecraft.com", 3724, "wotlk"},
     };
 
@@ -645,10 +646,9 @@ void AuthScreen::renderCard(auth::AuthHandler& authHandler, float screenW, float
     {
         const float titleSize = px(kTitleSize);
         const float top = col.y;
-        // Temporary visual marker for validating that the pt-BR build is running.
-        // Do not confuse it with the final product name.
-        ui_.textCentered(centreX, top, "WoWee PT-BR", titleSize, theme.ink, /*titleFace=*/true);
-        const float titleW = ui_.textWidth("WoWee PT-BR", titleSize, true);
+        // World of Legends branding on the login card.
+        ui_.textCentered(centreX, top, "World of Legends", titleSize, theme.ink, /*titleFace=*/true);
+        const float titleW = ui_.textWidth("World of Legends", titleSize, true);
         // Below the title's own descenders, which is further down than the
         // size names: a size is an em and the face draws taller than one.
         const float underlineY = top + ui_.inkHeight(titleSize, true) * 1.02f;
@@ -1005,7 +1005,9 @@ void AuthScreen::drawBackdrop() {
     // Kick the decode off once, then upload on whichever frame it lands.
     if (!bgDecodeStarted) {
         bgDecodeStarted = true;
-        std::string imgPath = "assets/krayonsignin.png";
+        std::string imgPath = "assets/world-of-legends-login.png";
+        if (!std::filesystem::exists(imgPath))
+            imgPath = "assets/krayonsignin.png";
         if (!std::filesystem::exists(imgPath))
             imgPath = (std::filesystem::current_path() / imgPath).string();
         bgDecodeFuture = std::async(std::launch::async, [imgPath]() {
