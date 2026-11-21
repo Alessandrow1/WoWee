@@ -78,6 +78,7 @@ g++ -std=c++20 -O2 -municode -mwindows -static-libgcc -static-libstdc++ \
 
 # Include the local, inspected update checker. Downloaded content is never executed.
 cp "$root/tools/nosso-cliente/world-of-legends-update.ps1" "$dest/world-of-legends-update.ps1"
+cp "$root/tools/nosso-cliente/world-of-legends-install.ps1" "$dest/world-of-legends-install.ps1"
 
 # ldd includes transitive dependencies. Copy only MSYS2/MinGW DLLs, not Windows System32.
 echo "Incluindo DLLs do ambiente MinGW64 ..."
@@ -121,7 +122,11 @@ WORLD OF LEGENDS - CLIENTE WINDOWS
    Resolucao e tela cheia devem ser ajustadas dentro do jogo.
 4. VERIFICAR ATUALIZACOES consulta GitHub Releases. Releases precisam ter
    World-of-Legends-Windows.zip e World-of-Legends-Windows.zip.sha256.
-   O pacote verificado fica em updates/; NAO e instalado automaticamente.
+   O pacote verificado fica em updates/; pode ser instalado apos confirmacao.
+   A instalacao exige o jogo fechado e cria backup completo lado a lado.
+   RESTAURAR VERSAO devolve a ultima instalacao preservada.
+   Se ja houver backup de atualizacao, a nova instalacao e bloqueada
+   ate voce arquivar ou restaurar o backup anterior.
 5. Mantenha MySQL, authserver e worldserver funcionando no PC que hospeda o reino.
 6. Para diagnosticar problemas, veja logs na pasta de trabalho do cliente.
 7. Nao distribua arquivos de dados proprietarios do jogo.
