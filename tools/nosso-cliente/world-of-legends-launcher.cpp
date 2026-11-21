@@ -22,6 +22,7 @@ constexpr int ID_PLAY = 1001;
 constexpr int ID_SETTINGS = 1002;
 constexpr int ID_REFRESH = 1003;
 constexpr int ID_UPDATE = 1005;
+constexpr int ID_ROLLBACK = 1006;
 constexpr int ID_CLOSE = 1004;
 constexpr int ID_SAVE_SETTINGS = 1101;
 constexpr int ID_CANCEL_SETTINGS = 1102;
@@ -46,6 +47,7 @@ HWND playButton = nullptr;
 HWND refreshButton = nullptr;
 HWND settingsButton = nullptr;
 HWND updateButton = nullptr;
+HWND rollbackButton = nullptr;
 HWND statusLabel = nullptr;
 HWND pathLabel = nullptr;
 HWND settingsWindow = nullptr;
@@ -297,17 +299,17 @@ void openSettings() {
     UpdateWindow(win);
 }
 
-void checkForUpdates() {
+void runUpdateScript(bool rollback) {
     const auto script = base / L"world-of-legends-update.ps1";
     if (!std::filesystem::exists(script)) {
-        MessageBoxW(mainWindow, L"Arquivo de atualizacao ausente. Recrie o pacote Windows.",
+        MessageBoxW(mainWindow, L"Atualizador ausente. Recrie o pacote Windows.",
                     L"World of Legends", MB_ICONERROR);
         return;
     }
-    // This packaged, locally maintained script only stages verified downloads.
-    // It never executes downloaded code or replaces a running installation.
     const std::wstring params = L"-NoProfile -ExecutionPolicy Bypass -File \"" +
-        script.wstring() + L"\" -InstalledVersion \"" + std::wstring(WOL_LAUNCHER_VERSION) + L"\"";
+        script.wstring() + L"\" -InstalledVersion \"" +
+        std::wstring(WOL_LAUNCHER_VERSION) + L"\" -LauncherPid " +
+        std::to_wstring(GetCurrentProcessId()) + (rollback ? L" -Rollback" : L"");
     HINSTANCE started = ShellExecuteW(mainWindow, L"open", L"powershell.exe",
                                       params.c_str(), base.c_str(), SW_SHOWNORMAL);
     if (reinterpret_cast<INT_PTR>(started) <= 32) {
@@ -454,6 +456,10 @@ LRESULT CALLBACK windowProc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp) {
                                 WS_CHILD | WS_VISIBLE | BS_OWNERDRAW,
                                 0, 0, 0, 0, hWnd,
                                 reinterpret_cast<HMENU>(static_cast<INT_PTR>(ID_UPDATE)), inst, nullptr);
+        rollbackButton = CreateWindowW(L"BUTTON", L"RESTAURAR VERSAO",
+                                WS_CHILD | WS_VISIBLE | BS_OWNERDRAW,
+                                0, 0, 0, 0, hWnd,
+                                reinterpret_cast<HMENU>(static_cast<INT_PTR>(ID_ROLLBACK)), inst, nullptr);
         SetTimer(hWnd, STATUS_TIMER, 10000, nullptr);
         refreshStatus();
         return 0;
@@ -465,7 +471,8 @@ LRESULT CALLBACK windowProc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp) {
         switch (LOWORD(wp)) {
         case ID_PLAY: launchGame(); break;
         case ID_SETTINGS: openSettings(); break;
-        case ID_UPDATE: checkForUpdates(); break;
+        case ID_UPDATE: runUpdateScript(false); break;
+        case ID_ROLLBACK: runUpdateScript(true); break;
         case ID_REFRESH:
             refreshStatus();
             break;
@@ -480,6 +487,7 @@ LRESULT CALLBACK windowProc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp) {
             MoveWindow(settingsButton, side - 302, h - 72, 145, 40, TRUE);
             MoveWindow(refreshButton, side - 145, h - 72, 145, 40, TRUE);
             MoveWindow(updateButton, w - 261, 25, 226, 42, TRUE);
+            MoveWindow(rollbackButton, w - 261, 74, 226, 38, TRUE);
         }
         InvalidateRect(hWnd, nullptr, FALSE);
         return 0;
