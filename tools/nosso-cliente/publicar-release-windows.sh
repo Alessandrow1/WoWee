@@ -79,7 +79,7 @@ fi
 echo "Release: $tag | commit $(git rev-parse --short HEAD)"
 echo "ZIP e SHA256 validados. Confirme somente apos testar launcher e jogo."
 read -r -p "Digite PUBLICAR para criar a release publica: " answer
-if [[ "$answer" != "PUBLICAR" ]]; then echo "Cancelado."; exit 0; fi
+if [[ "${answer^^}" != "PUBLICAR" ]]; then echo "Cancelado."; exit 0; fi
 gh release create "$tag" "$zipfile" "$hashfile" \
   --repo "$repo" \
   --target "$(git rev-parse HEAD)" \
