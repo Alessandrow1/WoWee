@@ -6,6 +6,7 @@
 #include <ws2tcpip.h>
 #include <windows.h>
 #include <shellapi.h>
+#include <propidl.h>
 #include <gdiplus.h>
 #include <memory>
 #include <filesystem>
