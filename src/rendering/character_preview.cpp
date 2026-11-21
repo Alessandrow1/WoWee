@@ -727,14 +727,19 @@ bool CharacterPreview::loadCharacter(game::Race race, game::Gender gender,
         }
     }
 
-    // If hair scalp texture was found, ensure it's loaded for type-6 slot
+    // Keep the chosen hair colour on every hair slot, not only the first.
+    // Some character models use separate texture slots for the scalp and
+    // facial hair. Binding just the first one leaves beards at their default
+    // colour even though the hairstyle changes correctly.
+    VkTexture* chosenHairTexture = nullptr;
     if (!hairScalpPath.empty()) {
-        VkTexture* hairTex = charRenderer_->loadTexture(hairScalpPath);
-        if (hairTex != nullptr) {
+        chosenHairTexture = charRenderer_->loadTexture(hairScalpPath);
+        if (chosenHairTexture != nullptr) {
             for (size_t ti = 0; ti < model.textures.size(); ti++) {
                 if (model.textures[ti].type == 6) {
-                    charRenderer_->setModelTexture(PREVIEW_MODEL_ID, static_cast<uint32_t>(ti), hairTex);
-                    break;
+                    charRenderer_->setModelTexture(PREVIEW_MODEL_ID,
+                                                  static_cast<uint32_t>(ti),
+                                                  chosenHairTexture);
                 }
             }
         }
@@ -759,7 +764,43 @@ bool CharacterPreview::loadCharacter(game::Race race, game::Gender gender,
     facialHair_ = facialHair;
 
     std::unordered_set<uint16_t> activeGeosets = buildBaseGeosets();
+    // Diagnostics for invisible body surfaces: distinguish an M2 with absent
+    // meshes from one whose available geosets were hidden by the appearance
+    // filter. The Vulkan character pipelines already disable face culling.
+    size_t visibleBodyBatches = 0;
+    size_t hiddenBodyBatches = 0;
+    for (const auto& batch : model.batches) {
+        const uint16_t group = static_cast<uint16_t>(batch.submeshId / 100);
+        // Group 0 has both the base body (id 0) and hair alternatives;
+        // count exactly id 0 here to avoid treating hair as missing skin.
+        const bool bodyPart = batch.submeshId == 0 ||
+                              group == 4 || group == 5 || group == 8 ||
+                              group == 13 || group == 20;
+        if (!bodyPart) continue;
+        if (activeGeosets.count(batch.submeshId) > 0) {
+            ++visibleBodyBatches;
+        } else {
+            ++hiddenBodyBatches;
+            LOG_INFO("CharacterPreview: inactive body geoset ",
+                     batch.submeshId, " model=", m2Path);
+        }
+    }
+    LOG_INFO("CharacterPreview: body batches active=", visibleBodyBatches,
+             " inactive=", hiddenBodyBatches,
+             " total=", model.batches.size(),
+             " skin=", bodySkinPath_.empty() ? "(none)" : bodySkinPath_);
     charRenderer_->setActiveGeosets(instanceId_, activeGeosets);
+
+    // Beard, moustache and sideburn meshes occupy facial geoset groups 1-3.
+    // Their batches can refer to a skin/legacy slot instead of type-6 hair,
+    // especially with replacement M2 assets. Give only those groups the same
+    // selected colour texture as the scalp. Never override the body group 0.
+    if (chosenHairTexture != nullptr) {
+        for (uint16_t group = 1; group <= 3; ++group) {
+            charRenderer_->setGroupTextureOverride(instanceId_, group,
+                                                   chosenHairTexture);
+        }
+    }
 
     // Play idle animation (Stand = animation ID 0)
     charRenderer_->playAnimation(instanceId_, rendering::anim::STAND, true);
