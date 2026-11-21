@@ -4,7 +4,8 @@ param(
  [string]$ArchivePath,
  [string]$ChecksumPath,
  [string]$ExpectedVersion,
- [int]$LauncherPid = 0
+ [int]$LauncherPid = 0,
+ [int]$UpdaterPid = 0
 )
 $ErrorActionPreference='Stop'
 Add-Type -AssemblyName System.Windows.Forms
@@ -93,6 +94,13 @@ try {
  $backup=Join-Path $parent ($leaf+'.backup')
  $temp=Join-Path $parent ($leaf+'.stage-'+[Guid]::NewGuid().ToString('N'))
  Closed
+ if($UpdaterPid -gt 0) {
+   $updater=Get-Process -Id $UpdaterPid -ErrorAction SilentlyContinue
+   if($updater) {
+     $updater.WaitForExit(45000)|Out-Null
+     if(-not $updater.HasExited){throw 'Processo do verificador ainda esta aberto.'}
+   }
+ }
  if($Mode -eq 'Rollback') {
    if(-not (Test-Path -LiteralPath $backup -PathType Container)){throw 'Backup nao encontrado.'}
    $replaced=Join-Path $parent ($leaf+'.replaced-'+(Get-Date -Format 'yyyyMMdd-HHmmss'))
