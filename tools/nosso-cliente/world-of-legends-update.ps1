@@ -30,6 +30,15 @@ function StartInstaller([string]$mode,[string]$archive,[string]$checksum,[string
     Write-Host 'Instalador iniciado em processo separado.'
 }
 
+function ConfirmAction([string]$message) {
+    Add-Type -AssemblyName System.Windows.Forms
+    $result = [System.Windows.Forms.MessageBox]::Show(
+        $message, 'World of Legends - Atualizacoes',
+        [System.Windows.Forms.MessageBoxButtons]::YesNo,
+        [System.Windows.Forms.MessageBoxIcon]::Question)
+    return ($result -eq [System.Windows.Forms.DialogResult]::Yes)
+}
+
 function Notify([string]$message) {
     Write-Host $message
     Add-Type -AssemblyName System.Windows.Forms
@@ -44,8 +53,7 @@ try {
             Notify 'Nao existe backup anterior para restaurar.'
             exit 0
         }
-        $answer = Read-Host 'Restaurar a versao anterior? [S/N]'
-        if ($answer -notmatch '^(s|sim|y|yes)$') {
+        if (-not (ConfirmAction 'Restaurar a versao anterior? A versao atual sera preservada.')) {
             Notify 'Restauracao cancelada.'
             exit 0
         }
@@ -82,8 +90,7 @@ try {
             throw 'Origem nao confiavel. Download bloqueado.'
         }
     }
-    $answer = Read-Host "Release $latest disponivel. Baixar e verificar? [S/N]"
-    if ($answer -notmatch '^(s|sim|y|yes)$') {
+    if (-not (ConfirmAction "Nova versao $latest disponivel. Deseja baixar e verificar o pacote?")) {
         Notify 'Download cancelado. Nada foi alterado.'
         exit 0
     }
@@ -113,8 +120,7 @@ try {
     }
     Notify ("SHA256 confirmado. Download salvo em: " + $zipPath + [Environment]::NewLine +
         'Pronto para instalar com backup, ou manter o pacote salvo.')
-    $installAnswer = Read-Host 'Instalar agora? O launcher sera fechado. Feche o jogo primeiro. [S/N]'
-    if ($installAnswer -match '^(s|sim|y|yes)$') {
+    if (ConfirmAction 'SHA256 confirmado. Instalar agora com backup? O launcher sera fechado. Feche o jogo primeiro.') {
         StartInstaller 'Install' $zipPath $hashPath $tag
         exit 0
     }
