@@ -93,7 +93,6 @@ try {
  $leaf=Split-Path -Leaf $live
  $backup=Join-Path $parent ($leaf+'.backup')
  $temp=Join-Path $parent ($leaf+'.stage-'+[Guid]::NewGuid().ToString('N'))
- Closed
  if($UpdaterPid -gt 0) {
    $updater=Get-Process -Id $UpdaterPid -ErrorAction SilentlyContinue
    if($updater) {
@@ -102,6 +101,7 @@ try {
    }
  }
  if($Mode -eq 'Rollback') {
+   Closed
    if(-not (Test-Path -LiteralPath $backup -PathType Container)){throw 'Backup nao encontrado.'}
    $replaced=Join-Path $parent ($leaf+'.replaced-'+(Get-Date -Format 'yyyyMMdd-HHmmss'))
    if(Test-Path -LiteralPath $replaced){throw 'Pasta de restauracao ja existe.'}
