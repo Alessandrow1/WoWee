@@ -43,7 +43,7 @@ fi
 icon_win="$(cygpath -m "$icon")"
 rc_file="$root/build/nosso-cliente-mingw64/world-of-legends-launcher.rc"
 res_file="$root/build/nosso-cliente-mingw64/world-of-legends-launcher-res.o"
-printf '1 ICON "%s"\\n' "$icon_win" > "$rc_file"
+printf '1 ICON "%s"\n' "$icon_win" > "$rc_file"
 windres -i "$rc_file" -o "$res_file" -O coff
 cp "$icon" "$dest/assets/world-of-legends.ico"
 
