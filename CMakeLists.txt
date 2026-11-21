@@ -1215,13 +1215,17 @@ if(WIN32)
     else()
         set(WOWEE_WIN_ICON "${CMAKE_CURRENT_SOURCE_DIR}/assets/Wowee.ico")
     endif()
-    configure_file(
-        "${WOWEE_WIN_ICON}"
-        ${CMAKE_CURRENT_BINARY_DIR}/assets/wowee.ico
-        COPYONLY
+    # Compile the icon directly from its absolute path. The old resources/wowee.rc
+    # referenced assets/wowee.ico, which could resolve to the old source asset
+    # instead of the generated copy depending on windres include search order.
+    # Generate an RC with a fixed icon resource ID (1), shared with the launcher.
+    file(TO_CMAKE_PATH "${WOWEE_WIN_ICON}" WOWEE_WIN_ICON_RC_PATH)
+    set(WOWEE_GAME_ICON_RC "${CMAKE_CURRENT_BINARY_DIR}/world-of-legends-game.rc")
+    file(WRITE "${WOWEE_GAME_ICON_RC}" "1 ICON \"${WOWEE_WIN_ICON_RC_PATH}\"\\n")
+    set_source_files_properties("${WOWEE_GAME_ICON_RC}" PROPERTIES
+        OBJECT_DEPENDS "${WOWEE_WIN_ICON}"
     )
-    set(CMAKE_RC_FLAGS "${CMAKE_RC_FLAGS} -I ${CMAKE_CURRENT_BINARY_DIR} -I ${CMAKE_CURRENT_SOURCE_DIR}")
-    list(APPEND WOWEE_PLATFORM_SOURCES resources/wowee.rc)
+    list(APPEND WOWEE_PLATFORM_SOURCES "${WOWEE_GAME_ICON_RC}")
 endif()
 
 # ---- Lua 5.1.5 (vendored, static library) ----
