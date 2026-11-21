@@ -42,7 +42,7 @@ echo "Incluindo DLLs do ambiente MinGW64 ..."
 while IFS= read -r dll; do
   [[ -f "$dll" ]] || continue
   cp -n "$dll" "$dest/"
-done < <(ldd "$exe" | awk '{for (i=1;i<=NF;i++) if ($i ~ /^\\/mingw64\\/bin\\/.*\\.dll$/) print $i}' | sort -u)
+done < <(ldd "$exe" | awk '{for (i=1;i<=NF;i++) if (index($i, "/mingw64/bin/") == 1 && $i ~ /[.]dll$/) print $i}' | sort -u)
 
 if [[ -f "$bin/vulkan-1.dll" ]]; then
   cp "$bin/vulkan-1.dll" "$dest/"
@@ -51,7 +51,7 @@ fi
 cat > "$dest/World-of-Legends.ini" <<'INI'
 [WorldOfLegends]
 ; Pasta que contem expansions/wotlk (os dados originais ficam fora deste ZIP)
-DataPath=E:\\
+DataPath=E:\
 INI
 
 cat > "$dest/LEIA-ME.txt" <<'TXT'
