@@ -4,6 +4,7 @@
 #include "rendering/pom_quality.hpp"
 #include "ui/graphics_presets.hpp"
 #include "ui/settings_panel.hpp"
+#include "ui/wol_fantasy_theme.hpp"
 #include "auth/crypto.hpp"
 #include "core/application.hpp"
 #include "pipeline/asset_inventory.hpp"
@@ -306,6 +307,8 @@ void AuthScreen::render(auth::AuthHandler& authHandler) {
     // large one.
     const float scale = std::clamp(std::min(screen.x / 1280.0f, screen.y / 760.0f), 0.62f, 2.6f);
     ui_.begin(ImGui::GetIO().DeltaTime, scale);
+    applyWolFantasyTheme(ui_);
+    drawWolScreenFrame(screen, scale);
     ui_.setLayer(PaperLayer::Page);
 
     // Everything about authenticating that is not drawing. It runs before the
@@ -641,7 +644,7 @@ void AuthScreen::renderCard(auth::AuthHandler& authHandler, float screenW, float
                        std::max(px(12), (screenH - cardH) * 0.48f));
     const ImVec2 cardB(cardA.x + cardW, cardA.y + cardH);
 
-    ui_.sheet(cardA, cardB);
+    ui_.sheet(cardA, cardB, /*taped=*/false);
     ui_.claimMouse(cardA, cardB);
 
     Column col{cardA.x + px(kCardPadX), cardB.x - px(kCardPadX), cardA.y + px(kCardPadTop)};
@@ -652,8 +655,8 @@ void AuthScreen::renderCard(auth::AuthHandler& authHandler, float screenW, float
         const float titleSize = px(kTitleSize);
         const float top = col.y;
         // World of Legends branding on the login card.
-        ui_.textCentered(centreX, top, "World of Legends", titleSize, theme.ink, /*titleFace=*/true);
-        const float titleW = ui_.textWidth("World of Legends", titleSize, true);
+        ui_.textCentered(centreX, top, "WORLD OF LEGENDS", titleSize, theme.ink, /*titleFace=*/true);
+        const float titleW = ui_.textWidth("WORLD OF LEGENDS", titleSize, true);
         // Below the title's own descenders, which is further down than the
         // size names: a size is an em and the face draws taller than one.
         const float underlineY = top + ui_.inkHeight(titleSize, true) * 1.02f;
@@ -831,7 +834,7 @@ void AuthScreen::renderCard(auth::AuthHandler& authHandler, float screenW, float
             std::snprintf(label, sizeof(label), "Conectando  %.0fs", authTimer);
             enabled = false;
         } else {
-            std::snprintf(label, sizeof(label), "Entrar");
+            std::snprintf(label, sizeof(label), "ENTRAR NO REINO");
         }
         if (ui_.button("login", a, b, label, PaperUI::ButtonKind::Primary, enabled)) submit = true;
     }
