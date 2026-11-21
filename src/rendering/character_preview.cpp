@@ -1422,7 +1422,10 @@ void CharacterPreview::compositePass(VkCommandBuffer cmd, uint32_t frameIndex) {
     // Studio lighting: key light from upper-right-front
     ubo.lightDir = glm::vec4(glm::normalize(glm::vec3(0.5f, -0.7f, 0.5f)), 0.0f);
     ubo.lightColor = glm::vec4(1.0f, 0.95f, 0.9f, 0.0f);
-    ubo.ambientColor = glm::vec4(0.35f, 0.35f, 0.4f, 0.0f);
+    // Keep the back and sides of a rotating character visible in the preview.
+    // The preview has a single fixed key light, so low ambient made the rear
+    // of dark-skinned/armoured models appear to vanish when rotated.
+    ubo.ambientColor = glm::vec4(0.62f, 0.61f, 0.64f, 0.0f);
     ubo.viewPos = glm::vec4(camera_->getPosition(), 0.0f);
     // No fog in preview
     ubo.fogColor = glm::vec4(0.05f, 0.05f, 0.1f, 0.0f);
