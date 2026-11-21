@@ -334,6 +334,11 @@ void launchGame() {
         return;
     }
     SetEnvironmentVariableW(L"WOW_DATA_PATH", dataPath.c_str());
+    // The launcher is the source of truth for the player's login server.
+    // Previously ServerHost only affected the ONLINE indicator; wowee.exe
+    // still opened its saved/localhost auth profile when launched remotely.
+    const auto serverHost = iniValue(L"ServerHost", L"127.0.0.1");
+    SetEnvironmentVariableW(L"WOWEE_SERVER_HOST", serverHost.c_str());
     // Apply only settings that the game actually supports. They are stored in
     // the launcher INI, not in the global Windows environment.
     SetEnvironmentVariableW(L"WOWEE_PREVIEW_MSAA",
