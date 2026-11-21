@@ -50,7 +50,7 @@ cp "$icon" "$dest/assets/world-of-legends.ico"
 echo "Compilando iniciador grafico World of Legends.exe ..."
 g++ -std=c++20 -O2 -municode -mwindows -static-libgcc -static-libstdc++ \
     "$root/tools/nosso-cliente/world-of-legends-launcher.cpp" "$res_file" \
-    -o "$dest/World of Legends.exe" -luser32
+    -o "$dest/World of Legends.exe" -luser32 -lgdi32 -lshell32 -lws2_32
 
 # ldd includes transitive dependencies. Copy only MSYS2/MinGW DLLs, not Windows System32.
 echo "Incluindo DLLs do ambiente MinGW64 ..."
@@ -67,6 +67,8 @@ cat > "$dest/World-of-Legends.ini" <<'INI'
 [WorldOfLegends]
 ; Pasta que contem expansions/wotlk (os dados originais ficam fora deste ZIP)
 DataPath=E:\
+; IP ou nome do computador que hospeda o reino (status TCP portas 3724/8085)
+ServerHost=127.0.0.1
 INI
 
 cat > "$dest/LEIA-ME.txt" <<'TXT'
@@ -76,6 +78,8 @@ WORLD OF LEGENDS - CLIENTE WINDOWS
    DataPath=E:\
    Esse caminho deve conter a subpasta expansions\wotlk extraida do seu jogo.
 3. Inicie World of Legends.exe com dois cliques.
+   Na janela, clique JOGAR; CONFIGURACOES abre o arquivo .ini.
+   ServerHost define o servidor verificado no status (portas 3724 e 8085).
 4. Mantenha MySQL, authserver e worldserver funcionando no PC que hospeda o reino.
 5. Para diagnosticar problemas, veja logs na pasta de trabalho do cliente.
 6. Nao distribua arquivos de dados proprietarios do jogo.
