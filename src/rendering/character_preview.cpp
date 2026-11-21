@@ -745,6 +745,21 @@ bool CharacterPreview::loadCharacter(game::Race race, game::Gender gender,
         }
     }
 
+    // HD character details (horns, tusks, ears, eyes) use replaceable
+    // texture type 8. loadModel deliberately skips non-zero texture types,
+    // so the filename populated from CharSections must be bound explicitly.
+    if (!skinExtraPath_.empty()) {
+        VkTexture* extraTex = charRenderer_->loadTexture(skinExtraPath_);
+        if (extraTex && extraTex != charRenderer_->loadTexture("")) {
+            for (size_t ti = 0; ti < model.textures.size(); ++ti) {
+                if (model.textures[ti].type == 8) {
+                    charRenderer_->setModelTexture(PREVIEW_MODEL_ID,
+                                                  static_cast<uint32_t>(ti), extraTex);
+                }
+            }
+        }
+    }
+
     // Create instance at origin with current yaw
     instanceId_ = charRenderer_->createInstance(PREVIEW_MODEL_ID,
         glm::vec3(0.0f, 0.0f, 0.0f),
@@ -795,7 +810,12 @@ bool CharacterPreview::loadCharacter(game::Race race, game::Gender gender,
     // Their batches can refer to a skin/legacy slot instead of type-6 hair,
     // especially with replacement M2 assets. Give only those groups the same
     // selected colour texture as the scalp. Never override the body group 0.
-    if (chosenHairTexture != nullptr) {
+    // Do not recolour non-human facial geosets: tauren and other races
+    // may use these groups for horns, tusks or other race-specific parts.
+    // loadTexture("") is the white fallback, never an actual hair colour.
+    if (race_ == game::Race::HUMAN && gender_ == game::Gender::MALE &&
+        chosenHairTexture != nullptr &&
+        chosenHairTexture != charRenderer_->loadTexture("")) {
         for (uint16_t group = 1; group <= 3; ++group) {
             charRenderer_->setGroupTextureOverride(instanceId_, group,
                                                    chosenHairTexture);
