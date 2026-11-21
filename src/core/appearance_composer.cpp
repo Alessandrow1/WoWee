@@ -262,6 +262,24 @@ void AppearanceComposer::compositePlayerSkin(uint32_t modelSlotId, const PlayerT
         }
     }
 
+    // Character detail textures use runtime slot type 8. The M2 uploader
+    // intentionally leaves all replaceable slots empty, so assigning the
+    // CharSections filename alone cannot texture horns/ears/eyes in-game.
+    if (!texInfo.skinExtraPath.empty()) {
+        rendering::VkTexture* extraTex = charRenderer->loadTexture(texInfo.skinExtraPath);
+        if (extraTex && extraTex != charRenderer->loadTexture("")) {
+            const auto* modelData = charRenderer->getModelData(modelSlotId);
+            if (modelData) {
+                for (size_t ti = 0; ti < modelData->textures.size(); ++ti) {
+                    if (modelData->textures[ti].type == 8) {
+                        charRenderer->setModelTexture(modelSlotId,
+                                                      static_cast<uint32_t>(ti), extraTex);
+                    }
+                }
+            }
+        }
+    }
+
     // Find cloak (type-2, Object Skin) texture slot index
     {
         auto* modelData = charRenderer->getModelData(modelSlotId);
