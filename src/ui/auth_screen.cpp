@@ -236,17 +236,17 @@ namespace {
 
 // The card's layout, written in units and drawn at a scale taken from the
 // window, so what follows is its proportions rather than its pixels.
-constexpr float kCardWidth     = 390.0f;
-constexpr float kCardPadX      = 34.0f;
-constexpr float kCardPadTop    = 26.0f;
-constexpr float kCardPadBottom = 20.0f;
-constexpr float kTitleSize     = 34.0f;
+constexpr float kCardWidth     = 352.0f;
+constexpr float kCardPadX      = 26.0f;
+constexpr float kCardPadTop    = 18.0f;
+constexpr float kCardPadBottom = 14.0f;
+constexpr float kTitleSize     = 28.0f;
 constexpr float kLabelSize     = 14.0f;
 constexpr float kBodySize      = 15.0f;
 constexpr float kSmallSize     = 13.0f;
-constexpr float kFieldHeight   = 38.0f;
-constexpr float kButtonHeight  = 46.0f;
-constexpr float kRowGap        = 11.0f;
+constexpr float kFieldHeight   = 34.0f;
+constexpr float kButtonHeight  = 40.0f;
+constexpr float kRowGap        = 8.0f;
 constexpr float kLabelGap      = 3.0f;
 
 /// A code that looks like one someone finished typing.
@@ -640,7 +640,7 @@ void AuthScreen::renderCard(auth::AuthHandler& authHandler, float screenW, float
     // the logo, keep the entire card visible instead of clipping the form.
     const float cardX = (screenW - cardW) * 0.5f;
     const float bottomLimit = std::max(px(12), screenH - cardH - px(12));
-    const float preferredY = screenH * 0.43f;
+    const float preferredY = screenH * 0.45f;
     const ImVec2 cardA(cardX, std::min(preferredY, bottomLimit));
     const ImVec2 cardB(cardA.x + cardW, cardA.y + cardH);
 
