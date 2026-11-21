@@ -22,8 +22,13 @@ exe="$bin/wowee.exe"
 }
 
 dest="$root/dist/World-of-Legends-Windows"
+backup="$root/dist/World-of-Legends-Windows-anterior"
 mkdir -p "$root/dist"
-rm -rf "$dest"
+# Keep the last known-working version in case this package fails validation.
+if [[ -d "$dest" ]]; then
+  rm -rf "$backup"
+  mv "$dest" "$backup"
+fi
 mkdir -p "$dest"
 cp "$exe" "$dest/wowee.exe"
 cp -R "$bin/assets" "$dest/assets"
@@ -63,6 +68,10 @@ if [[ -f "$bin/vulkan-1.dll" ]]; then
   cp "$bin/vulkan-1.dll" "$dest/"
 fi
 
+# Preserve any custom data/host settings from the prior working package.
+if [[ -f "$backup/World-of-Legends.ini" ]]; then
+  cp "$backup/World-of-Legends.ini" "$dest/World-of-Legends.ini"
+else
 cat > "$dest/World-of-Legends.ini" <<'INI'
 [WorldOfLegends]
 ; Pasta que contem expansions/wotlk (os dados originais ficam fora deste ZIP)
@@ -70,6 +79,7 @@ DataPath=E:\
 ; IP ou nome do computador que hospeda o reino (status TCP portas 3724/8085)
 ServerHost=127.0.0.1
 INI
+fi
 
 cat > "$dest/LEIA-ME.txt" <<'TXT'
 WORLD OF LEGENDS - CLIENTE WINDOWS
