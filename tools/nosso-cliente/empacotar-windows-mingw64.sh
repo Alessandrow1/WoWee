@@ -21,6 +21,14 @@ exe="$bin/wowee.exe"
   echo "ERRO: faltam as duas artes originais em assets/" >&2; exit 1;
 }
 
+# Keep the version displayed in the launcher aligned with the release archive.
+version="$(tr -d '\r\n' < "$root/tools/nosso-cliente/world-of-legends-version.txt")"
+if [[ ! "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+  echo "ERRO: versao invalida: $version" >&2
+  exit 1
+fi
+printf '#pragma once\n#define WOL_LAUNCHER_VERSION L"%s"\n' "$version" > "$root/build/nosso-cliente-mingw64/world-of-legends-version.hpp"
+
 dest="$root/dist/World-of-Legends-Windows"
 backup="$root/dist/World-of-Legends-Windows-anterior"
 mkdir -p "$root/dist"
@@ -60,9 +68,11 @@ res_file="$root/build/nosso-cliente-mingw64/world-of-legends-launcher-res.o"
 printf '1 ICON "%s"\n' "$icon_win" > "$rc_file"
 windres -i "$rc_file" -o "$res_file" -O coff
 cp "$icon" "$dest/assets/world-of-legends.ico"
+printf 'v%s\n' "$version" > "$dest/World-of-Legends.version"
 
 echo "Compilando iniciador grafico World of Legends.exe ..."
 g++ -std=c++20 -O2 -municode -mwindows -static-libgcc -static-libstdc++ \
+    -I"$root/build/nosso-cliente-mingw64" \
     "$root/tools/nosso-cliente/world-of-legends-launcher.cpp" "$res_file" \
     -o "$dest/World of Legends.exe" -luser32 -lgdi32 -lshell32 -lws2_32 -lgdiplus
 
