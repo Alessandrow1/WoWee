@@ -662,10 +662,93 @@ void CharacterCreateScreen::render(game::GameHandler& /*gameHandler*/) {
         look.gap(px(9));
     };
 
-    appearancePicker("look.skin", "Tom de pele", &skin, maxSkin);
+    // Colour swatches are visual navigation, not guesses at the server's
+    // CharSections IDs. The actual texture always comes from the 3D preview.
+    // Provide a short, scrollable (by pages) grid to avoid overflowing the
+    // fixed-height creation sheet on races with many hair colour options.
+    const auto colourPalette = [&](const char* id, const char* label,
+                                   int* value, int maxVal, bool forHair) {
+        ui_.text(look.at(), label, labelSize, theme.inkSoft);
+        look.gap(labelRow);
+        const int options = std::max(1, maxVal + 1);
+        constexpr int kColumns = 7;
+        constexpr int kVisible = 14;
+        const int page = *value / kVisible;
+        const int first = page * kVisible;
+        const int last = std::min(options, first + kVisible);
+        const float swatch = px(26);
+        const float spacing = px(7);
+        const ImVec2 gridOrigin = look.at();
+        ImDrawList* draw = ImGui::GetBackgroundDrawList();
+
+        // Representative colours only: a DBC variation index is not an RGB
+        // value. Never use the swatch colour as the actual character option.
+        static constexpr ImU32 kSkinColours[] = {
+            IM_COL32(249, 222, 190, 255), IM_COL32(232, 190, 151, 255),
+            IM_COL32(204, 153, 114, 255), IM_COL32(161, 112, 82, 255),
+            IM_COL32(119, 80, 63, 255), IM_COL32(82, 60, 54, 255),
+            IM_COL32(174, 185, 178, 255), IM_COL32(121, 151, 168, 255),
+            IM_COL32(119, 142, 105, 255), IM_COL32(163, 121, 149, 255)
+        };
+        static constexpr ImU32 kHairColours[] = {
+            IM_COL32(42, 32, 32, 255), IM_COL32(83, 52, 34, 255),
+            IM_COL32(131, 77, 46, 255), IM_COL32(176, 114, 62, 255),
+            IM_COL32(226, 183, 103, 255), IM_COL32(243, 219, 166, 255),
+            IM_COL32(195, 195, 188, 255), IM_COL32(122, 133, 141, 255),
+            IM_COL32(154, 53, 44, 255), IM_COL32(225, 229, 231, 255)
+        };
+        const int paletteSize = 10;
+
+        for (int i = first; i < last; ++i) {
+            const int offset = i - first;
+            const float x = gridOrigin.x + (offset % kColumns) * (swatch + spacing);
+            const float y = gridOrigin.y + (offset / kColumns) * (swatch + spacing);
+            const ImVec2 a(x, y);
+            const ImVec2 b(x + swatch, y + swatch);
+            const bool hovered = ui_.hover(a, b);
+            if (hovered && ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
+                *value = i;
+            }
+            const ImU32 colour = forHair
+                ? kHairColours[i % paletteSize] : kSkinColours[i % paletteSize];
+            draw->AddRectFilled(a, b, colour, px(4));
+            draw->AddRect(a, b, i == *value ? theme.crayonRedLit : theme.paperEdge,
+                          px(4), 0, i == *value ? px(3) : px(1));
+            if (i == *value) {
+                draw->AddRect(ImVec2(a.x - px(3), a.y - px(3)),
+                              ImVec2(b.x + px(3), b.y + px(3)),
+                              theme.ink, px(5), 0, px(1.5f));
+            }
+        }
+        look.gap(px((last - first > kColumns) ? 72 : 38));
+
+        // Browse other options without adding more rows to the panel.
+        if (options > kVisible) {
+            const auto [a, b] = look.row(px(28));
+            const float bw = px(40);
+            const std::string backId = std::string(id) + ".pageback";
+            const std::string nextId = std::string(id) + ".pagenext";
+            if (ui_.button(backId.c_str(), a, ImVec2(a.x + bw, b.y), "<",
+                           PaperUI::ButtonKind::Quiet, first > 0)) {
+                *value = std::max(0, first - kVisible);
+            }
+            if (ui_.button(nextId.c_str(), ImVec2(b.x - bw, a.y), b, ">",
+                           PaperUI::ButtonKind::Quiet, last < options)) {
+                *value = last;
+            }
+            const std::string counter = std::to_string(*value + 1) +
+                                        " / " + std::to_string(options);
+            ui_.textCentered((a.x + b.x) * 0.5f, a.y + px(5),
+                             counter.c_str(), smallSize, theme.inkSoft);
+            look.gap(px(4));
+        }
+        look.gap(px(7));
+    };
+
+    colourPalette("look.skin", "Tom de pele", &skin, maxSkin, false);
     appearancePicker("look.face", "Rosto", &face, maxFace);
     appearancePicker("look.hairstyle", "Cabelo", &hairStyle, maxHairStyle);
-    appearancePicker("look.haircolor", "Cor do cabelo", &hairColor, maxHairColor);
+    colourPalette("look.haircolor", "Cor do cabelo", &hairColor, maxHairColor, true);
     appearancePicker("look.facialhair", "Detalhes do rosto", &facialHair, maxFacialHair);
 
     // Skin and hairstyle choose the valid face/color subsets. Refresh now so a
