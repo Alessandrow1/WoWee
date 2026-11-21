@@ -35,6 +35,7 @@ for required in \
   "World-of-Legends-Windows/World of Legends.exe" \
   "World-of-Legends-Windows/wowee.exe" \
   "World-of-Legends-Windows/world-of-legends-update.ps1" \
+  "World-of-Legends-Windows/world-of-legends-install.ps1" \
   "World-of-Legends-Windows/World-of-Legends.ini" \
   "World-of-Legends-Windows/World-of-Legends.version" \
   "World-of-Legends-Windows/assets/world-of-legends.ico" \
