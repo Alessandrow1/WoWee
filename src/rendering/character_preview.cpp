@@ -764,6 +764,31 @@ bool CharacterPreview::loadCharacter(game::Race race, game::Gender gender,
     facialHair_ = facialHair;
 
     std::unordered_set<uint16_t> activeGeosets = buildBaseGeosets();
+    // Diagnostics for invisible body surfaces: distinguish an M2 with absent
+    // meshes from one whose available geosets were hidden by the appearance
+    // filter. The Vulkan character pipelines already disable face culling.
+    size_t visibleBodyBatches = 0;
+    size_t hiddenBodyBatches = 0;
+    for (const auto& batch : model.batches) {
+        const uint16_t group = static_cast<uint16_t>(batch.submeshId / 100);
+        // Group 0 has both the base body (id 0) and hair alternatives;
+        // count exactly id 0 here to avoid treating hair as missing skin.
+        const bool bodyPart = batch.submeshId == 0 ||
+                              group == 4 || group == 5 || group == 8 ||
+                              group == 13 || group == 20;
+        if (!bodyPart) continue;
+        if (activeGeosets.count(batch.submeshId) > 0) {
+            ++visibleBodyBatches;
+        } else {
+            ++hiddenBodyBatches;
+            LOG_INFO("CharacterPreview: inactive body geoset ",
+                     batch.submeshId, " model=", m2Path);
+        }
+    }
+    LOG_INFO("CharacterPreview: body batches active=", visibleBodyBatches,
+             " inactive=", hiddenBodyBatches,
+             " total=", model.batches.size(),
+             " skin=", bodySkinPath_.empty() ? "(none)" : bodySkinPath_);
     charRenderer_->setActiveGeosets(instanceId_, activeGeosets);
 
     // Beard, moustache and sideburn meshes occupy facial geoset groups 1-3.
