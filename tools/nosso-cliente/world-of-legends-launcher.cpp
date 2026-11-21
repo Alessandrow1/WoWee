@@ -1,4 +1,4 @@
-// World of Legends Launcher v0.2 - self-contained Win32 GUI (no Electron/runtime).
+// World of Legends Launcher v0.3 - self-contained Win32 GUI (no Electron/runtime).
 // The existing wowee.exe and game data remain unchanged.
 #define WIN32_LEAN_AND_MEAN
 #define NOMINMAX
@@ -20,6 +20,7 @@ using namespace Gdiplus;
 constexpr int ID_PLAY = 1001;
 constexpr int ID_SETTINGS = 1002;
 constexpr int ID_REFRESH = 1003;
+constexpr int ID_UPDATE = 1005;
 constexpr int ID_CLOSE = 1004;
 constexpr int ID_SAVE_SETTINGS = 1101;
 constexpr int ID_CANCEL_SETTINGS = 1102;
@@ -43,6 +44,7 @@ HWND mainWindow = nullptr;
 HWND playButton = nullptr;
 HWND refreshButton = nullptr;
 HWND settingsButton = nullptr;
+HWND updateButton = nullptr;
 HWND statusLabel = nullptr;
 HWND pathLabel = nullptr;
 HWND settingsWindow = nullptr;
@@ -294,6 +296,25 @@ void openSettings() {
     UpdateWindow(win);
 }
 
+void checkForUpdates() {
+    const auto script = base / L"world-of-legends-update.ps1";
+    if (!std::filesystem::exists(script)) {
+        MessageBoxW(mainWindow, L"Arquivo de atualizacao ausente. Recrie o pacote Windows.",
+                    L"World of Legends", MB_ICONERROR);
+        return;
+    }
+    // This packaged, locally maintained script only stages verified downloads.
+    // It never executes downloaded code or replaces a running installation.
+    const std::wstring params = L"-NoProfile -ExecutionPolicy Bypass -File \"" +
+        script.wstring() + L"\" -InstalledVersion \"0.2.0\"";
+    HINSTANCE started = ShellExecuteW(mainWindow, L"open", L"powershell.exe",
+                                      params.c_str(), base.c_str(), SW_SHOWNORMAL);
+    if (reinterpret_cast<INT_PTR>(started) <= 32) {
+        MessageBoxW(mainWindow, L"Windows PowerShell nao encontrado.",
+                    L"World of Legends", MB_ICONERROR);
+    }
+}
+
 void launchGame() {
     const auto client = base / L"wowee.exe";
     if (!std::filesystem::exists(client)) {
@@ -408,7 +429,7 @@ void paintBackground(HDC dc, const RECT& rect) {
     auto dataPath = iniValue(L"DataPath", L"E:\\");
     std::wstring dataInfo = L"ARQUIVOS DO JOGO  " + dataPath;
     label(g, dataInfo.c_str(), 35, height - 96, 15, Color(255, 170, 191, 213));
-    label(g, L"v0.2  |  WotLK 3.3.5a", 36, height - 44, 14, Color(255, 135, 156, 185));
+    label(g, L"v0.3  |  WotLK 3.3.5a", 36, height - 44, 14, Color(255, 135, 156, 185));
     label(g, L"Status indica portas TCP acessiveis, nao autentica o jogo.",
           285, height - 43, 13, Color(255, 130, 152, 179));
 }
@@ -427,6 +448,10 @@ LRESULT CALLBACK windowProc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp) {
         refreshButton = CreateWindowW(L"BUTTON", L"VERIFICAR STATUS", WS_CHILD | WS_VISIBLE | BS_OWNERDRAW,
                                      0, 0, 0, 0, hWnd,
                                      reinterpret_cast<HMENU>(static_cast<INT_PTR>(ID_REFRESH)), inst, nullptr);
+        updateButton = CreateWindowW(L"BUTTON", L"VERIFICAR ATUALIZACOES",
+                                WS_CHILD | WS_VISIBLE | BS_OWNERDRAW,
+                                0, 0, 0, 0, hWnd,
+                                reinterpret_cast<HMENU>(static_cast<INT_PTR>(ID_UPDATE)), inst, nullptr);
         SetTimer(hWnd, STATUS_TIMER, 10000, nullptr);
         refreshStatus();
         return 0;
@@ -438,6 +463,7 @@ LRESULT CALLBACK windowProc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp) {
         switch (LOWORD(wp)) {
         case ID_PLAY: launchGame(); break;
         case ID_SETTINGS: openSettings(); break;
+        case ID_UPDATE: checkForUpdates(); break;
         case ID_REFRESH:
             refreshStatus();
             break;
@@ -451,6 +477,7 @@ LRESULT CALLBACK windowProc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp) {
             MoveWindow(playButton, side - 302, h - 143, 302, 58, TRUE);
             MoveWindow(settingsButton, side - 302, h - 72, 145, 40, TRUE);
             MoveWindow(refreshButton, side - 145, h - 72, 145, 40, TRUE);
+            MoveWindow(updateButton, w - 261, 25, 226, 42, TRUE);
         }
         InvalidateRect(hWnd, nullptr, FALSE);
         return 0;
