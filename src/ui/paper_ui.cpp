@@ -211,6 +211,10 @@ void PaperUI::clearFocus() {
 
 void PaperUI::rule(ImVec2 a, ImVec2 b, ImU32 col, float thickness, uint32_t seed,
                    float amplitude) {
+    if (theme_.fantasyMode) {
+        dl_->AddLine(a, b, col, thickness);
+        return;
+    }
     const float dx = b.x - a.x;
     const float dy = b.y - a.y;
     const float len = std::sqrt(dx * dx + dy * dy);
@@ -258,6 +262,26 @@ void PaperUI::wobblyRect(ImDrawList* dl, ImVec2 a, ImVec2 b, ImU32 col, float th
 void PaperUI::sheet(ImVec2 a, ImVec2 b, bool taped) { drawSheetBody(dl_, a, b, taped); }
 
 void PaperUI::drawSheetBody(ImDrawList* dl, ImVec2 a, ImVec2 b, bool taped) {
+    if (theme_.fantasyMode) {
+        // Crisp midnight panel with subtle metal-gold double border.
+        dl->AddRectFilled(ImVec2(a.x + px(8), a.y + px(12)),
+                          ImVec2(b.x + px(8), b.y + px(12)),
+                          paperFade(theme_.shadow, 0.58f), px(12));
+        dl->AddRectFilled(a, b, theme_.paperTop, px(10));
+        dl->AddRectFilledMultiColor(
+            ImVec2(a.x, a.y + (b.y - a.y) * 0.28f), b,
+            paperFade(theme_.paperBottom, 0.0f),
+            paperFade(theme_.paperBottom, 0.0f),
+            theme_.paperBottom, theme_.paperBottom);
+        dl->AddRect(a, b, theme_.paperEdge, px(10), 0, px(1.8f));
+        dl->AddRect(ImVec2(a.x + px(7), a.y + px(7)),
+                    ImVec2(b.x - px(7), b.y - px(7)),
+                    paperFade(theme_.paperEdge, 0.30f), px(6), 0, px(0.8f));
+        dl->AddLine(ImVec2(a.x + px(28), a.y + px(10)),
+                    ImVec2(b.x - px(28), a.y + px(10)),
+                    theme_.crayonRed, px(2.1f));
+        return;
+    }
     // The shadow, as a handful of expanding rectangles rather than a blur.
     for (int i = 5; i >= 1; --i) {
         const float spread = px(static_cast<float>(i) * 1.8f);
