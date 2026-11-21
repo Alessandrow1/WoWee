@@ -1221,7 +1221,7 @@ if(WIN32)
     # Generate an RC with a fixed icon resource ID (1), shared with the launcher.
     file(TO_CMAKE_PATH "${WOWEE_WIN_ICON}" WOWEE_WIN_ICON_RC_PATH)
     set(WOWEE_GAME_ICON_RC "${CMAKE_CURRENT_BINARY_DIR}/world-of-legends-game.rc")
-    file(WRITE "${WOWEE_GAME_ICON_RC}" "1 ICON \"${WOWEE_WIN_ICON_RC_PATH}\"\\n")
+    file(WRITE "${WOWEE_GAME_ICON_RC}" "1 ICON \"${WOWEE_WIN_ICON_RC_PATH}\"\n")
     set_source_files_properties("${WOWEE_GAME_ICON_RC}" PROPERTIES
         OBJECT_DEPENDS "${WOWEE_WIN_ICON}"
     )
