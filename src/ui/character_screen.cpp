@@ -1,6 +1,7 @@
 #include "ui/character_screen.hpp"
 #include "game/equipment_hash.hpp"
 #include "ui/ui_colors.hpp"
+#include "ui/wol_fantasy_theme.hpp"
 #include "ui/pt_br_character_names.hpp"
 #include "rendering/character_preview.hpp"
 #include "rendering/renderer.hpp"
@@ -50,6 +51,8 @@ void CharacterScreen::render(game::GameHandler& gameHandler) {
     const ImVec2 screen = ImGui::GetIO().DisplaySize;
     const float scale = std::clamp(std::min(screen.x / 1280.0f, screen.y / 760.0f), 0.62f, 2.6f);
     ui_.begin(ImGui::GetIO().DeltaTime, scale);
+    applyWolFantasyTheme(ui_);
+    drawWolScreenFrame(screen, scale);
     ui_.setLayer(PaperLayer::Page);
 
     const PaperTheme& theme = ui_.theme();
@@ -126,7 +129,7 @@ void CharacterScreen::render(game::GameHandler& gameHandler) {
     const float sheetH = std::min(px(kSheetHeight), screen.y - px(40));
     const ImVec2 a((screen.x - sheetW) * 0.5f, (screen.y - sheetH) * 0.5f);
     const ImVec2 b(a.x + sheetW, a.y + sheetH);
-    ui_.sheet(a, b);
+    ui_.sheet(a, b, /*taped=*/false);
     ui_.claimMouse(a, b);
 
     const float titleSize = px(kTitleSize);
@@ -137,14 +140,14 @@ void CharacterScreen::render(game::GameHandler& gameHandler) {
     Column col{a.x + px(kPad), b.x - px(kPad), a.y + px(kPad)};
 
     // ---- heading ----------------------------------------------------------
-    ui_.text(col.at(), "Escolha um herói", titleSize, theme.ink, /*titleFace=*/true);
+    ui_.text(col.at(), "SELECIONE SEU HERÓI", titleSize, theme.ink, /*titleFace=*/true);
     {
         const float w = ui_.textWidth("Escolha um herói", titleSize, true);
         const float y = col.y + ui_.inkHeight(titleSize, true);
         ui_.squiggle(ImVec2(col.x0, y), ImVec2(col.x0 + w * 1.04f, y), theme.crayonRed,
                      px(2.0f), 0x4417u);
     }
-    ui_.textRight(col.x1, col.y + titleSize * 0.55f, "Ou crie um novo.", smallSize,
+    ui_.textRight(col.x1, col.y + titleSize * 0.55f, "Seu próximo capítulo começa aqui", smallSize,
                   theme.pencil);
     col.gap(ui_.inkHeight(titleSize, true) + px(18));
 
@@ -294,7 +297,7 @@ void CharacterScreen::render(game::GameHandler& gameHandler) {
                 setStatus("Atualizando lista de personagens...");
             }
         }
-        if (quiet("create", "Novo herói", px(130))) {
+        if (quiet("create", "Criar herói", px(130))) {
             if (onCreateCharacter) onCreateCharacter();
         }
         if (quiet("addons", "AddOns", px(110))) {
