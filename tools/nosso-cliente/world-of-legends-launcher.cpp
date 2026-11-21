@@ -106,7 +106,7 @@ bool tcpReachable(const std::wstring& host, int port) {
             FD_ZERO(&errorSet);
             FD_SET(sock, &writeSet);
             FD_SET(sock, &errorSet);
-            timeval timeout{0, 150000};  // 150 ms maximum per candidate
+            timeval timeout{2, 0};  // 2 s: relays internacionais podem levar mais que 150 ms
             rc = select(0, nullptr, &writeSet, &errorSet, &timeout);
             if (rc > 0 && FD_ISSET(sock, &writeSet)) {
                 int errorCode = 1;
