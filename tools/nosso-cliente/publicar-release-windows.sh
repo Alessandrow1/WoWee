@@ -98,6 +98,6 @@ gh release create "$tag" "$zipfile" "$hashfile" \
   --repo "$repo" \
   --target "$(git rev-parse HEAD)" \
   --title "World of Legends $tag - Windows" \
-  --notes "Cliente portatil Windows com launcher e atualizador: download SHA-256, instalacao confirmada, backup e restauracao da versao anterior. v0.3.3 destina-se a validar o fluxo completo de atualizacao em uma copia isolada. Requer dados originais do jogo instalados separadamente." \
+  --notes "World of Legends v0.3.4: interface renovada em azul-noite e dourado nas telas de login, selecao e criacao de personagem; confirmacoes graficas do atualizador; correcao da extracao de diretorios no instalador. Download verificado por SHA-256, backup e restauracao. Requer os dados originais do jogo separados." \
   --latest
 echo "Publicada: https://github.com/$repo/releases/tag/$tag"
