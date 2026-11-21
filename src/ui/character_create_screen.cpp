@@ -630,26 +630,43 @@ void CharacterCreateScreen::render(game::GameHandler& /*gameHandler*/) {
     ui_.text(look.at(), "PERSONALIZAÇÃO", px(22), theme.ink, /*titleFace=*/true);
     look.gap(px(30));
 
-    const auto appearanceSlider = [&](const char* id, const char* label, int* value, int maxVal) {
+    // No numeric sliders: the player cycles real DBC-backed styles with
+    // simple previous/next buttons while the 3D preview updates immediately.
+    // Labels and option count are intentionally separate from the DBC IDs.
+    const auto appearancePicker = [&](const char* id, const char* label, int* value, int maxVal) {
         ui_.text(look.at(), label, labelSize, theme.inkSoft);
         look.gap(labelRow);
-        const auto [sa, sb] = look.row(px(30));
-        // One choice is no choice; a slider from zero to zero is a control
-        // that cannot be moved and should not look as though it could.
-        if (maxVal > 0) {
-            ui_.sliderInt(id, sa, sb, value, 0, maxVal);
-        } else {
-            ui_.text(ImVec2(sa.x, sa.y + px(6)), "Apenas uma opção", smallSize,
-                     theme.pencil);
+        const auto [sa, sb] = look.row(px(36));
+        const float arrowW = px(43);
+        const bool canChoose = maxVal > 0;
+        const std::string previousId = std::string(id) + ".previous";
+        const std::string nextId = std::string(id) + ".next";
+        if (ui_.button(previousId.c_str(), sa,
+                       ImVec2(sa.x + arrowW, sb.y), "<",
+                       PaperUI::ButtonKind::Secondary, canChoose)) {
+            *value = (*value <= 0) ? maxVal : (*value - 1);
         }
-        look.gap(px(10));
+        if (ui_.button(nextId.c_str(), ImVec2(sb.x - arrowW, sa.y), sb, ">",
+                       PaperUI::ButtonKind::Secondary, canChoose)) {
+            *value = (*value >= maxVal) ? 0 : (*value + 1);
+        }
+        if (canChoose) {
+            const std::string count = std::to_string(*value + 1) + " / " +
+                                      std::to_string(maxVal + 1);
+            ui_.textCentered((sa.x + sb.x) * 0.5f,
+                             sa.y + px(7), count.c_str(), bodySize, theme.ink);
+        } else {
+            ui_.textCentered((sa.x + sb.x) * 0.5f,
+                             sa.y + px(8), "Única opção", smallSize, theme.pencil);
+        }
+        look.gap(px(9));
     };
 
-    appearanceSlider("look.skin", "Pele", &skin, maxSkin);
-    appearanceSlider("look.face", "Rosto", &face, maxFace);
-    appearanceSlider("look.hairstyle", "Penteado", &hairStyle, maxHairStyle);
-    appearanceSlider("look.haircolor", "Cor do cabelo", &hairColor, maxHairColor);
-    appearanceSlider("look.facialhair", "Detalhe facial", &facialHair, maxFacialHair);
+    appearancePicker("look.skin", "Tom de pele", &skin, maxSkin);
+    appearancePicker("look.face", "Rosto", &face, maxFace);
+    appearancePicker("look.hairstyle", "Cabelo", &hairStyle, maxHairStyle);
+    appearancePicker("look.haircolor", "Cor do cabelo", &hairColor, maxHairColor);
+    appearancePicker("look.facialhair", "Detalhes do rosto", &facialHair, maxFacialHair);
 
     // Skin and hairstyle choose the valid face/color subsets. Refresh now so a
     // Create click in this same frame sends IDs from the newly selected subset.
