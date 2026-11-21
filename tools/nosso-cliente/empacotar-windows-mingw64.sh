@@ -55,7 +55,7 @@ cp "$icon" "$dest/assets/world-of-legends.ico"
 echo "Compilando iniciador grafico World of Legends.exe ..."
 g++ -std=c++20 -O2 -municode -mwindows -static-libgcc -static-libstdc++ \
     "$root/tools/nosso-cliente/world-of-legends-launcher.cpp" "$res_file" \
-    -o "$dest/World of Legends.exe" -luser32 -lgdi32 -lshell32 -lws2_32
+    -o "$dest/World of Legends.exe" -luser32 -lgdi32 -lshell32 -lws2_32 -lgdiplus
 
 # ldd includes transitive dependencies. Copy only MSYS2/MinGW DLLs, not Windows System32.
 echo "Incluindo DLLs do ambiente MinGW64 ..."
