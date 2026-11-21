@@ -278,7 +278,38 @@ void AuthScreen::render(auth::AuthHandler& authHandler) {
         // was read, one that was migrated, and the first run where there is
         // no file at all and the list would otherwise be empty.
         seedKnownServers();
-        if (selectedServerIndex_ < 0 && !servers_.empty()) selectServerProfile(0);
+        // The launcher passes its configured remote host when starting wowee.
+        // Keep saved credentials tied to their original server: find an
+        // existing profile by host/port, or add a new, empty WoL profile.
+        // Unlike a hardcoded localhost default, this also works on a first
+        // install on another computer without editing login configuration.
+        const char* configuredHost = std::getenv("WOWEE_SERVER_HOST");
+        const std::string launcherHost =
+            configuredHost ? trimAscii(configuredHost) : std::string{};
+        const bool validLauncherHost = !launcherHost.empty() &&
+            launcherHost.find_first_of(" \t\r\n/:\\") == std::string::npos;
+        if (validLauncherHost) {
+            int targetIndex = -1;
+            for (int i = 0; i < static_cast<int>(servers_.size()); ++i) {
+                if (servers_[i].hostname == launcherHost && servers_[i].port == 3724) {
+                    targetIndex = i;
+                    break;
+                }
+            }
+            if (targetIndex < 0) {
+                ServerProfile remote;
+                remote.hostname = launcherHost;
+                remote.port = 3724;
+                remote.label = "World of Legends";
+                remote.expansionId = "wotlk";
+                servers_.push_back(std::move(remote));
+                targetIndex = static_cast<int>(servers_.size()) - 1;
+            }
+            selectServerProfile(targetIndex);
+            LOG_INFO("World of Legends server configured by launcher: ", launcherHost, ":3724");
+        } else if (selectedServerIndex_ < 0 && !servers_.empty()) {
+            selectServerProfile(0);
+        }
         loginInfoLoaded = true;
         if (portText_.empty()) setPort(port);
         // Only when the list left nothing to point at. This used to run
