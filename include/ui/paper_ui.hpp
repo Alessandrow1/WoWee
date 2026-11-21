@@ -47,6 +47,7 @@ class TextEdit;
 /// something laid on top rather than as part of it, and every line colour
 /// taken from a crayon in the picture.
 struct PaperTheme {
+    bool fantasyMode = false;  // Opt-in angular fantasy panels instead of hand-drawn paper.
     ImU32 paperTop     = IM_COL32(0xFB, 0xF6, 0xEA, 0xFF);
     ImU32 paperBottom  = IM_COL32(0xEF, 0xE4, 0xCD, 0xFF);
     ImU32 paperEdge    = IM_COL32(0xD3, 0xC0, 0x9C, 0xFF);
