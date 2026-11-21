@@ -187,6 +187,7 @@ void paintBackground(HDC hdc, const RECT& rect) {
 LRESULT CALLBACK windowProc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp) {
     switch (msg) {
     case WM_CREATE: {
+        mainWindow = hWnd;  // WM_CREATE runs before CreateWindowExW returns.
         HINSTANCE inst = reinterpret_cast<HINSTANCE>(GetWindowLongPtrW(hWnd, GWLP_HINSTANCE));
         playButton = CreateWindowW(L"BUTTON", L"JOGAR", WS_CHILD | WS_VISIBLE | BS_OWNERDRAW,
                                    42, 250, 255, 68, hWnd,
