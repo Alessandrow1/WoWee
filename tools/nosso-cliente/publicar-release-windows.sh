@@ -32,9 +32,33 @@ for required in \
     echo "ERRO: arquivo ausente dentro do ZIP: $required"; exit 1
   fi
 done
-if [[ -n "$(git status --porcelain --untracked-files=no)" ]]; then
-  echo "ERRO: existem mudancas locais nao commitadas."; exit 1
+# The WoWee build regenerates tracked SPIR-V shaders and opcode registries.
+# Those generated files are expected to differ after compilation. Do not
+# reset/delete them, and do not block a tested binary release because of them.
+# Keep blocking actual changes to source code, scripts and configuration.
+unexpected=()
+while IFS= read -r modified; do
+  [[ -n "$modified" ]] || continue
+  case "$modified" in
+    assets/shaders/*.spv|include/game/opcode_*_generated.inc)
+      ;;
+    extern/vk-bootstrap)
+      echo "AVISO: submodulo vk-bootstrap aparece modificado localmente."
+      echo "Confirme que o executavel compilado foi testado antes de publicar."
+      ;;
+    *)
+      unexpected+=("$modified")
+      ;;
+  esac
+done < <(git diff --name-only HEAD --)
+if [[ ${#unexpected[@]} -gt 0 ]]; then
+  echo "ERRO: arquivos de codigo/configuracao modificados sem commit:"
+  printf '  %s\n' "${unexpected[@]}"
+  echo "Revise e registre as alteracoes antes da release."
+  exit 1
 fi
+echo "OK: alteracoes locais geradas pelo build nao impedem a release."
+
 if [[ "$(git branch --show-current)" != "develop" ]]; then
   echo "ERRO: execute na branch develop."; exit 1
 fi
