@@ -1,6 +1,7 @@
 #include "ui/character_create_screen.hpp"
 #include "core/logger.hpp"
 #include "ui/ui_colors.hpp"
+#include "ui/wol_fantasy_theme.hpp"
 #include "ui/pt_br_character_names.hpp"
 #include "rendering/character_preview.hpp"
 #include "rendering/renderer.hpp"
@@ -427,6 +428,8 @@ void CharacterCreateScreen::render(game::GameHandler& /*gameHandler*/) {
     scale = std::max(scale, 0.34f);
 
     ui_.begin(ImGui::GetIO().DeltaTime, scale);
+    applyWolFantasyTheme(ui_);
+    drawWolScreenFrame(screen, scale);
     ui_.setLayer(PaperLayer::Page);
 
     const PaperTheme& theme = ui_.theme();
@@ -436,7 +439,7 @@ void CharacterCreateScreen::render(game::GameHandler& /*gameHandler*/) {
     const float sheetH = px(kSheetHeight);
     const ImVec2 a((screen.x - sheetW) * 0.5f, (screen.y - sheetH) * 0.5f);
     const ImVec2 b(a.x + sheetW, a.y + sheetH);
-    ui_.sheet(a, b);
+    ui_.sheet(a, b, /*taped=*/false);
     ui_.claimMouse(a, b);
 
     const float titleSize = px(kTitleSize);
@@ -450,14 +453,14 @@ void CharacterCreateScreen::render(game::GameHandler& /*gameHandler*/) {
     Column page{a.x + px(kPad), b.x - px(kPad), a.y + px(kPad)};
 
     // ---- heading ----------------------------------------------------------
-    ui_.text(page.at(), "Criar herói", titleSize, theme.ink, /*titleFace=*/true);
+    ui_.text(page.at(), "FORJE SEU HERÓI", titleSize, theme.ink, /*titleFace=*/true);
     {
-        const float w = ui_.textWidth("Criar herói", titleSize, true);
+        const float w = ui_.textWidth("FORJE SEU HERÓI", titleSize, true);
         const float y = page.y + ui_.inkHeight(titleSize, true);
         ui_.squiggle(ImVec2(page.x0, y), ImVec2(page.x0 + w * 1.04f, y), theme.crayonRed,
                      px(2.0f), 0x7731u);
     }
-    ui_.textRight(page.x1, page.y + titleSize * 0.55f, "Quem você vai ser?", smallSize,
+    ui_.textRight(page.x1, page.y + titleSize * 0.55f, "Escolha sua origem e molde sua lenda", smallSize,
                   theme.pencil);
     page.gap(ui_.inkHeight(titleSize, true) + px(18));
 
@@ -624,7 +627,7 @@ void CharacterCreateScreen::render(game::GameHandler& /*gameHandler*/) {
     const game::Gender currentGender = static_cast<game::Gender>(genderIndex);
 
     Column look{appearanceX, appearanceX + appearanceW, bodyTop};
-    ui_.text(look.at(), "Aparência", px(22), theme.ink, /*titleFace=*/true);
+    ui_.text(look.at(), "PERSONALIZAÇÃO", px(22), theme.ink, /*titleFace=*/true);
     look.gap(px(30));
 
     const auto appearanceSlider = [&](const char* id, const char* label, int* value, int maxVal) {
@@ -714,7 +717,7 @@ void CharacterCreateScreen::render(game::GameHandler& /*gameHandler*/) {
         const float createW = px(210);
         const bool waiting = (createTimer_ >= 0.0f);
         if (ui_.button("create.go", ImVec2(page.x1 - createW, y), ImVec2(page.x1, y + h),
-                       waiting ? "Criando..." : "Criar herói",
+                       waiting ? "Criando..." : "CRIAR PERSONAGEM",
                        PaperUI::ButtonKind::Primary, !waiting)) {
             submit();
         }
