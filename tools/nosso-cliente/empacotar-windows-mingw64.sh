@@ -136,6 +136,13 @@ else
   echo "AVISO: sem criador de ZIP, a pasta esta pronta em $dest"
 fi
 
+# Matching checksum asset for publishing a verified GitHub Release.
+zipfile="$root/dist/World-of-Legends-Windows.zip"
+if [[ -f "$zipfile" ]] && command -v sha256sum >/dev/null 2>&1; then
+  (cd "$root/dist" && sha256sum World-of-Legends-Windows.zip > World-of-Legends-Windows.zip.sha256)
+  echo "SHA256: $root/dist/World-of-Legends-Windows.zip.sha256"
+fi
+
 echo "CONCLUIDO: $dest"
 echo "INICIADOR: $dest/World of Legends.exe"
 echo "ZIP: $root/dist/World-of-Legends-Windows.zip"
