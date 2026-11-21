@@ -288,10 +288,26 @@ void AuthScreen::render(auth::AuthHandler& authHandler) {
             configuredHost ? trimAscii(configuredHost) : std::string{};
         const bool validLauncherHost = !launcherHost.empty() &&
             launcherHost.find_first_of(" \t\r\n/:\\") == std::string::npos;
+        // Custom TCP relays frequently assign a public port other than 3724.
+        // The port belongs to the authentication endpoint and must not be
+        // confused with the separate world port advertised in realmlist.
+        int launcherPort = 3724;
+        if (const char* configuredPort = std::getenv("WOWEE_SERVER_PORT")) {
+            const std::string rawPort = trimAscii(configuredPort);
+            if (!rawPort.empty() &&
+                rawPort.find_first_not_of("0123456789") == std::string::npos) {
+                try {
+                    const int parsed = std::stoi(rawPort);
+                    if (parsed >= 1 && parsed <= 65535) launcherPort = parsed;
+                } catch (...) {
+                    LOG_WARNING("Invalid WOWEE_SERVER_PORT; using 3724");
+                }
+            }
+        }
         if (validLauncherHost) {
             int targetIndex = -1;
             for (int i = 0; i < static_cast<int>(servers_.size()); ++i) {
-                if (servers_[i].hostname == launcherHost && servers_[i].port == 3724) {
+                if (servers_[i].hostname == launcherHost && servers_[i].port == launcherPort) {
                     targetIndex = i;
                     break;
                 }
@@ -299,14 +315,14 @@ void AuthScreen::render(auth::AuthHandler& authHandler) {
             if (targetIndex < 0) {
                 ServerProfile remote;
                 remote.hostname = launcherHost;
-                remote.port = 3724;
+                remote.port = launcherPort;
                 remote.label = "World of Legends";
                 remote.expansionId = "wotlk";
                 servers_.push_back(std::move(remote));
                 targetIndex = static_cast<int>(servers_.size()) - 1;
             }
             selectServerProfile(targetIndex);
-            LOG_INFO("World of Legends server configured by launcher: ", launcherHost, ":3724");
+            LOG_INFO("World of Legends server configured by launcher: ", launcherHost, ":", launcherPort);
         } else if (selectedServerIndex_ < 0 && !servers_.empty()) {
             selectServerProfile(0);
         }
