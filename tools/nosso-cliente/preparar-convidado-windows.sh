@@ -41,6 +41,12 @@ if find "$source_dir" -type f \( -iname '*.mpq' -o -iname '*.casc' \) -print -qu
   echo "ERRO: pacote contem arquivos de dados MPQ/CASC; remova-os antes de distribuir." >&2
   exit 1
 fi
+# Os dados do jogo importados em uma instalacao local nunca entram no ZIP
+# de distribuicao. Envie apenas os recursos do projeto permitidos.
+if [[ -d "$source_dir/expansions" ]]; then
+  echo "ERRO: a pasta fonte inclui expansions/. Nao redistribua os dados do jogo no ZIP." >&2
+  exit 1
+fi
 rm -rf "$guest_dir"
 cp -R "$source_dir" "$guest_dir"
 rm -rf "$guest_dir/updates"
@@ -79,7 +85,9 @@ WORLD OF LEGENDS - CONVIDADO
 2. Abra INICIAR-WOL.cmd. Ele tenta localizar automaticamente os dados WotLK
    que voce ja possui e configura o caminho no launcher.
 3. Se nao encontrar, selecione a pasta que contem expansions/wotlk.
-   O programa nao baixa nem copia os dados comerciais do jogo.
+   O jogo perguntara se deseja copiar os seus proprios dados para dentro
+   da pasta World of Legends (modo portatil), ou manter os dados na origem.
+   A copia exige espaco livre e pode demorar, mas preserva os originais.
 4. O endereco do reino ja vem configurado. Nao precisa de VPN.
 5. Peca ao administrador uma conta individual do World of Legends.
 6. O servidor do anfitriao precisa ficar ligado para jogar.
