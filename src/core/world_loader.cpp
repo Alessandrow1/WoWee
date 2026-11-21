@@ -39,6 +39,7 @@
 #include <filesystem>
 #include <fstream>
 #include <algorithm>
+#include <cstdlib>
 #include <cctype>
 #include <functional>
 #include <glm/gtc/quaternion.hpp>
@@ -592,7 +593,24 @@ void WorldLoader::loadMapGeometry(uint32_t mapId, const std::string& mapName,
             // then restore the full radius after entering the game.
             // This matches WoW's behavior: load quickly, stream the rest in-game.
             const int savedLoadRadius = 6;
-            terrainMgr->setLoadRadius(4);   // 9x9=81 tiles - prevents hitches on spawn
+            // Prioritize getting the player into the world quickly: the rest of
+            // the terrain continues streaming after the loading screen.
+            // Default radius 2 = 5x5 tiles instead of the previous 9x9.
+            // Set WOWEE_INITIAL_TERRAIN_RADIUS=4 to restore the old behavior.
+            int initialLoadRadius = 2;
+            if (const char* setting = std::getenv("WOWEE_INITIAL_TERRAIN_RADIUS")) {
+                char* end = nullptr;
+                long parsed = std::strtol(setting, &end, 10);
+                if (end != setting && *end == '\0' && parsed >= 1 && parsed <= 4) {
+                    initialLoadRadius = static_cast<int>(parsed);
+                } else {
+                    LOG_WARNING("Ignoring invalid WOWEE_INITIAL_TERRAIN_RADIUS (expected 1..4)");
+                }
+            }
+            LOG_INFO("Initial terrain streaming radius: ", initialLoadRadius,
+                     " (", (2 * initialLoadRadius + 1) * (2 * initialLoadRadius + 1),
+                     " tiles maximum near spawn)");
+            terrainMgr->setLoadRadius(initialLoadRadius);
             terrainMgr->setUnloadRadius(9);
 
             // Trigger tile streaming for surrounding area
