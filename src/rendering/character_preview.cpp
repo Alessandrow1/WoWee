@@ -734,7 +734,8 @@ bool CharacterPreview::loadCharacter(game::Race race, game::Gender gender,
     VkTexture* chosenHairTexture = nullptr;
     if (!hairScalpPath.empty()) {
         chosenHairTexture = charRenderer_->loadTexture(hairScalpPath);
-        if (chosenHairTexture != nullptr) {
+        if (chosenHairTexture != nullptr &&
+            chosenHairTexture != charRenderer_->loadTexture("")) {
             for (size_t ti = 0; ti < model.textures.size(); ti++) {
                 if (model.textures[ti].type == 6) {
                     charRenderer_->setModelTexture(PREVIEW_MODEL_ID,

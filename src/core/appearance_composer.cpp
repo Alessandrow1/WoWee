@@ -245,17 +245,17 @@ void AppearanceComposer::compositePlayerSkin(uint32_t modelSlotId, const PlayerT
         }
     }
 
-    // Override hair texture on GPU (type-6 slot) after model load
+    // Apply the selected hair colour to EVERY type-6 slot (including separate
+    // scalp/facial hair slots). Never bind the white missing-texture fallback.
     if (!texInfo.hairTexturePath.empty()) {
         rendering::VkTexture* hairTex = charRenderer->loadTexture(texInfo.hairTexturePath);
-        if (hairTex) {
+        if (hairTex && hairTex != charRenderer->loadTexture("")) {
             auto* modelData = charRenderer->getModelData(modelSlotId);
             if (modelData) {
                 for (size_t ti = 0; ti < modelData->textures.size(); ti++) {
                     if (modelData->textures[ti].type == 6) {
                         charRenderer->setModelTexture(modelSlotId, static_cast<uint32_t>(ti), hairTex);
                         LOG_INFO("Applied DBC hair texture to slot ", ti, ": ", texInfo.hairTexturePath);
-                        break;
                     }
                 }
             }
