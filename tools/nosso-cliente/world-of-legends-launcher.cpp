@@ -1,4 +1,4 @@
-// World of Legends Launcher v0.3 - self-contained Win32 GUI (no Electron/runtime).
+// World of Legends Launcher - self-contained Win32 GUI (no Electron/runtime).
 // The existing wowee.exe and game data remain unchanged.
 #define WIN32_LEAN_AND_MEAN
 #define NOMINMAX
@@ -14,6 +14,7 @@
 #include <vector>
 #include <algorithm>
 #include <utility>
+#include "world-of-legends-version.hpp"
 
 namespace {
 using namespace Gdiplus;
@@ -306,7 +307,7 @@ void checkForUpdates() {
     // This packaged, locally maintained script only stages verified downloads.
     // It never executes downloaded code or replaces a running installation.
     const std::wstring params = L"-NoProfile -ExecutionPolicy Bypass -File \"" +
-        script.wstring() + L"\" -InstalledVersion \"0.3.0\"";
+        script.wstring() + L"\" -InstalledVersion \"" + std::wstring(WOL_LAUNCHER_VERSION) + L"\"";
     HINSTANCE started = ShellExecuteW(mainWindow, L"open", L"powershell.exe",
                                       params.c_str(), base.c_str(), SW_SHOWNORMAL);
     if (reinterpret_cast<INT_PTR>(started) <= 32) {
@@ -429,7 +430,8 @@ void paintBackground(HDC dc, const RECT& rect) {
     auto dataPath = iniValue(L"DataPath", L"E:\\");
     std::wstring dataInfo = L"ARQUIVOS DO JOGO  " + dataPath;
     label(g, dataInfo.c_str(), 35, height - 96, 15, Color(255, 170, 191, 213));
-    label(g, L"v0.3  |  WotLK 3.3.5a", 36, height - 44, 14, Color(255, 135, 156, 185));
+    const std::wstring versionText = L"v" + std::wstring(WOL_LAUNCHER_VERSION) + L"  |  WotLK 3.3.5a  |  Atualizador SHA-256";
+    label(g, versionText.c_str(), 36, height - 44, 14, Color(255, 135, 156, 185));
     label(g, L"Status indica portas TCP acessiveis, nao autentica o jogo.",
           285, height - 43, 13, Color(255, 130, 152, 179));
 }
