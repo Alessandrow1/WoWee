@@ -28,6 +28,7 @@ constexpr int ID_SAVE_SETTINGS = 1101;
 constexpr int ID_CANCEL_SETTINGS = 1102;
 constexpr int ID_PATH = 1103;
 constexpr int ID_HOST = 1104;
+constexpr int ID_AUTH_PORT = 1108;
 constexpr int ID_CACHE = 1105;
 constexpr int ID_TERRAIN = 1106;
 constexpr int ID_MSAA = 1107;
@@ -53,6 +54,7 @@ HWND pathLabel = nullptr;
 HWND settingsWindow = nullptr;
 HWND pathEdit = nullptr;
 HWND hostEdit = nullptr;
+HWND authPortEdit = nullptr;
 HWND cacheCombo = nullptr;
 HWND terrainCombo = nullptr;
 HWND msaaCombo = nullptr;
@@ -122,8 +124,12 @@ bool tcpReachable(const std::wstring& host, int port) {
 
 void refreshStatus() {
     const auto host = iniValue(L"ServerHost", L"127.0.0.1");
-    const bool auth = tcpReachable(host, 3724);
-    const bool world = tcpReachable(host, 8085);
+    const auto authPortText = iniValue(L"ServerPort", L"3724");
+    const int authPort = _wtoi(authPortText.c_str());
+    const auto worldHost = iniValue(L"WorldHost", host.c_str());
+    const int worldPort = _wtoi(iniValue(L"WorldPort", L"8085").c_str());
+    const bool auth = authPort > 0 && authPort <= 65535 && tcpReachable(host, authPort);
+    const bool world = worldPort > 0 && worldPort <= 65535 && tcpReachable(worldHost, worldPort);
     realmOnline = auth && world;
     std::wstring message = L"REINO: ";
     if (realmOnline) message += L"ONLINE  (autenticacao + mundo acessiveis)";
@@ -173,6 +179,14 @@ std::wstring selectedCombo(HWND combo) {
 bool saveSettings(HWND dialog) {
     const std::wstring path = controlText(pathEdit);
     const std::wstring host = controlText(hostEdit);
+    const std::wstring authPort = controlText(authPortEdit);
+    const int portNumber = _wtoi(authPort.c_str());
+    if (authPort.empty() || authPort.find_first_not_of(L"0123456789") != std::wstring::npos ||
+        portNumber < 1 || portNumber > 65535) {
+        MessageBoxW(dialog, L"A porta de autenticacao deve estar entre 1 e 65535.",
+                    L"Porta invalida", MB_ICONWARNING);
+        return false;
+    }
     if (path.empty() || !std::filesystem::exists(std::filesystem::path(path) / L"expansions")) {
         MessageBoxW(dialog, L"DataPath deve apontar para uma pasta que contem expansions.",
                     L"Caminho invalido", MB_ICONWARNING);
@@ -186,6 +200,7 @@ bool saveSettings(HWND dialog) {
     const std::pair<const wchar_t*, std::wstring> entries[] = {
         {L"DataPath", path},
         {L"ServerHost", host},
+        {L"ServerPort", authPort},
         {L"FileCacheMB", selectedCombo(cacheCombo)},
         {L"InitialTerrainRadius", selectedCombo(terrainCombo)},
         {L"PreviewMSAA", selectedCombo(msaaCombo)}
@@ -213,7 +228,10 @@ LRESULT CALLBACK settingsProc(HWND window, UINT message, WPARAM wp, LPARAM lp) {
         settingsControl(window, L"STATIC", L"HOST DO SERVIDOR (IP ou nome do PC)",
                         0, 24, 98, 460, 24);
         hostEdit = settingsControl(window, L"EDIT", iniValue(L"ServerHost", L"127.0.0.1").c_str(),
-                        WS_BORDER | ES_AUTOHSCROLL, 24, 124, 455, 30, ID_HOST);
+                        WS_BORDER | ES_AUTOHSCROLL, 24, 124, 334, 30, ID_HOST);
+        settingsControl(window, L"STATIC", L"PORTA", 0, 370, 98, 100, 24);
+        authPortEdit = settingsControl(window, L"EDIT", iniValue(L"ServerPort", L"3724").c_str(),
+                        WS_BORDER | ES_NUMBER, 370, 124, 109, 30, ID_AUTH_PORT);
 
         settingsControl(window, L"STATIC", L"CACHE DE ARQUIVOS (MB)", 0, 24, 171, 460, 22);
         cacheCombo = settingsControl(window, L"COMBOBOX", L"",
@@ -255,7 +273,7 @@ LRESULT CALLBACK settingsProc(HWND window, UINT message, WPARAM wp, LPARAM lp) {
     case WM_CLOSE: DestroyWindow(window); return 0;
     case WM_DESTROY:
         settingsWindow = nullptr;
-        pathEdit = hostEdit = cacheCombo = terrainCombo = msaaCombo = nullptr;
+        pathEdit = hostEdit = authPortEdit = cacheCombo = terrainCombo = msaaCombo = nullptr;
         return 0;
     }
     return DefWindowProcW(window, message, wp, lp);
@@ -339,6 +357,8 @@ void launchGame() {
     // still opened its saved/localhost auth profile when launched remotely.
     const auto serverHost = iniValue(L"ServerHost", L"127.0.0.1");
     SetEnvironmentVariableW(L"WOWEE_SERVER_HOST", serverHost.c_str());
+    SetEnvironmentVariableW(L"WOWEE_SERVER_PORT",
+                            iniValue(L"ServerPort", L"3724").c_str());
     // Apply only settings that the game actually supports. They are stored in
     // the launcher INI, not in the global Windows environment.
     SetEnvironmentVariableW(L"WOWEE_PREVIEW_MSAA",
