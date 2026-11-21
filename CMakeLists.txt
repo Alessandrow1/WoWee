@@ -1208,8 +1208,15 @@ if(WIN32)
     # in wowee.rc ("assets\\wowee.ico").  Tell the RC compiler to also search
     # the build directory - GNU windres uses cwd (already the build dir) but
     # llvm-windres resolves relative to the .rc file, so it needs the hint.
+    # Use the locally supplied World of Legends icon when present.
+    # Keep upstream's original icon as a fallback for clean checkouts.
+    if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/assets/world-of-legends.ico")
+        set(WOWEE_WIN_ICON "${CMAKE_CURRENT_SOURCE_DIR}/assets/world-of-legends.ico")
+    else()
+        set(WOWEE_WIN_ICON "${CMAKE_CURRENT_SOURCE_DIR}/assets/Wowee.ico")
+    endif()
     configure_file(
-        ${CMAKE_CURRENT_SOURCE_DIR}/assets/Wowee.ico
+        "${WOWEE_WIN_ICON}"
         ${CMAKE_CURRENT_BINARY_DIR}/assets/wowee.ico
         COPYONLY
     )
