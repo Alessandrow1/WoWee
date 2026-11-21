@@ -9,6 +9,16 @@ fi
 if [[ "$MSYSTEM" != "MINGW64" ]]; then
   echo "ERRO: execute no MSYS2 MINGW64."; exit 1
 fi
+# The GitHub CLI Windows MSI normally installs here; MSYS2 may not inherit
+# the updated Windows PATH even after the CLI has been installed.
+if ! command -v gh >/dev/null 2>&1; then
+  for github_cli_dir in "/c/Program Files/GitHub CLI" "/c/Program Files (x86)/GitHub CLI"; do
+    if [[ -f "$github_cli_dir/gh.exe" ]]; then
+      export PATH="$PATH:$github_cli_dir"
+      break
+    fi
+  done
+fi
 for app in gh sha256sum unzip git; do
   command -v "$app" >/dev/null || { echo "ERRO: falta $app"; exit 1; }
 done
