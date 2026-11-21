@@ -6,12 +6,15 @@
 #include <ws2tcpip.h>
 #include <windows.h>
 #include <shellapi.h>
+#include <gdiplus.h>
+#include <memory>
 #include <filesystem>
 #include <string>
 #include <vector>
 #include <algorithm>
 
 namespace {
+using namespace Gdiplus;
 constexpr int ID_PLAY = 1001;
 constexpr int ID_SETTINGS = 1002;
 constexpr int ID_REFRESH = 1003;
@@ -41,6 +44,9 @@ HFONT fontSubtitle = nullptr;
 HBRUSH bgBrush = nullptr;
 HBRUSH panelBrush = nullptr;
 bool realmOnline = false;
+std::wstring realmStatus = L"VERIFICANDO SERVIDOR...";
+std::unique_ptr<Gdiplus::Image> artwork;
+ULONG_PTR gdiplusToken = 0;
 
 std::wstring iniValue(const wchar_t* key, const wchar_t* fallback) {
     wchar_t value[2048]{};
@@ -104,8 +110,8 @@ void refreshStatus() {
     else if (auth) message += L"AUTH ONLINE  |  MUNDO OFFLINE";
     else if (world) message += L"MUNDO ONLINE  |  AUTH OFFLINE";
     else message += L"OFFLINE";
-    setText(statusLabel, message);
-    InvalidateRect(mainWindow, nullptr, FALSE);
+    realmStatus = message;
+    if (mainWindow) InvalidateRect(mainWindow, nullptr, FALSE);
 }
 
 void openSettings() {
@@ -160,28 +166,81 @@ void launchGame() {
     ShowWindow(mainWindow, SW_MINIMIZE);
 }
 
-void paintBackground(HDC hdc, const RECT& rect) {
-    FillRect(hdc, &rect, bgBrush);
-    RECT header{0, 0, rect.right, 143};
-    FillRect(hdc, &header, panelBrush);
-    HBRUSH goldBrush = CreateSolidBrush(GOLD);
-    RECT accent{0, 140, rect.right, 143};
-    FillRect(hdc, &accent, goldBrush);
-    DeleteObject(goldBrush);
 
-    SetBkMode(hdc, TRANSPARENT);
-    SetTextColor(hdc, GOLD);
-    SelectObject(hdc, fontTitle);
-    RECT title{42, 26, rect.right - 25, 83};
-    DrawTextW(hdc, L"WORLD OF LEGENDS", -1, &title, DT_LEFT | DT_SINGLELINE | DT_VCENTER);
-    SetTextColor(hdc, MUTED);
-    SelectObject(hdc, fontSubtitle);
-    RECT subtitle{44, 87, rect.right - 25, 120};
-    DrawTextW(hdc, L"Seu reino. Sua aventura. Seu mundo.", -1, &subtitle, DT_LEFT | DT_SINGLELINE);
-    SelectObject(hdc, fontSmall);
-    RECT foot{42, rect.bottom - 45, rect.right - 20, rect.bottom - 12};
-    DrawTextW(hdc, L"Launcher v0.1  |  Cliente WotLK 3.3.5a  |  Status: verificacao TCP", -1,
-              &foot, DT_LEFT | DT_SINGLELINE);
+void roundedBox(Graphics& g, const RectF& r, float radius, const Color& color,
+                const Color& outline, float borderWidth = 1.0f) {
+    GraphicsPath p;
+    float d = radius * 2;
+    p.AddArc(r.X, r.Y, d, d, 180, 90);
+    p.AddArc(r.GetRight() - d, r.Y, d, d, 270, 90);
+    p.AddArc(r.GetRight() - d, r.GetBottom() - d, d, d, 0, 90);
+    p.AddArc(r.X, r.GetBottom() - d, d, d, 90, 90);
+    p.CloseFigure();
+    SolidBrush b(color);
+    g.FillPath(&b, &p);
+    Pen border(outline, borderWidth);
+    g.DrawPath(&border, &p);
+}
+
+void label(Graphics& g, const wchar_t* content, float x, float y, float size,
+           Color color, bool bold = false) {
+    FontFamily family(L"Segoe UI");
+    Font font(&family, size, bold ? FontStyleBold : FontStyleRegular, UnitPixel);
+    SolidBrush brush(color);
+    PointF origin(x, y);
+    g.DrawString(content, -1, &font, origin, &brush);
+}
+
+void paintBackground(HDC dc, const RECT& rect) {
+    Graphics g(dc);
+    g.SetSmoothingMode(SmoothingModeAntiAlias);
+    g.SetTextRenderingHint(TextRenderingHintAntiAliasGridFit);
+    const int width = rect.right, height = rect.bottom;
+
+    SolidBrush solid(Color(255, 8, 17, 33));
+    g.FillRectangle(&solid, 0, 0, width, height);
+    if (artwork && artwork->GetLastStatus() == Ok) {
+        const UINT aw = artwork->GetWidth();
+        const UINT ah = artwork->GetHeight();
+        if (aw && ah) {
+            // Fill the hero area while keeping the original artwork unaltered.
+            const float imageAreaH = static_cast<float>(height) * 0.86f;
+            const float scale = std::max(static_cast<float>(width) / aw, imageAreaH / ah);
+            const float srcW = width / scale;
+            const float srcH = imageAreaH / scale;
+            g.DrawImage(artwork.get(), RectF(0, 0, static_cast<REAL>(width), imageAreaH),
+                        (aw - srcW) * 0.5f, (ah - srcH) * 0.34f,
+                        srcW, srcH, UnitPixel);
+        }
+    }
+
+    // Cinematic grading, legible controls, no edited or regenerated artwork.
+    LinearGradientBrush shade(Point(0, 0), Point(0, height),
+        Color(40, 4, 9, 18), Color(255, 5, 13, 25));
+    g.FillRectangle(&shade, 0, 0, width, height);
+    SolidBrush bottom(Color(224, 8, 20, 37));
+    g.FillRectangle(&bottom, 0, height - 185, width, 185);
+    SolidBrush line(Color(210, 200, 152, 73));
+    g.FillRectangle(&line, 0, height - 185, width, 2);
+
+    roundedBox(g, RectF(30, 24, 160, 36), 10,
+               Color(180, 8, 20, 37), Color(170, 214, 168, 82));
+    label(g, L"WOL  /  LAUNCHER", 44, 30, 16, Color(255, 239, 206, 142), true);
+    label(g, L"SUA LENDA COMEÇA AQUI", 35, height - 314, 34,
+          Color(255, 249, 224, 165), true);
+    label(g, L"Explore um mundo de aventuras.", 37, height - 266, 19,
+          Color(255, 226, 233, 247));
+    label(g, L"WORLD OF LEGENDS", 36, height - 164, 18,
+          Color(255, 241, 210, 146), true);
+
+    Color statusColor = realmOnline ? Color(255, 128, 237, 167) : Color(255, 255, 151, 142);
+    label(g, realmStatus.c_str(), 35, height - 130, 17, statusColor, true);
+    auto dataPath = iniValue(L"DataPath", L"E:\\");
+    std::wstring dataInfo = L"ARQUIVOS DO JOGO  " + dataPath;
+    label(g, dataInfo.c_str(), 35, height - 96, 15, Color(255, 170, 191, 213));
+    label(g, L"v0.1  |  WotLK 3.3.5a", 36, height - 44, 14, Color(255, 135, 156, 185));
+    label(g, L"Status indica portas TCP acessiveis, nao autentica o jogo.",
+          285, height - 43, 13, Color(255, 130, 152, 179));
 }
 
 LRESULT CALLBACK windowProc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp) {
@@ -189,23 +248,16 @@ LRESULT CALLBACK windowProc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp) {
     case WM_CREATE: {
         mainWindow = hWnd;  // WM_CREATE runs before CreateWindowExW returns.
         HINSTANCE inst = reinterpret_cast<HINSTANCE>(GetWindowLongPtrW(hWnd, GWLP_HINSTANCE));
-        playButton = CreateWindowW(L"BUTTON", L"JOGAR", WS_CHILD | WS_VISIBLE | BS_OWNERDRAW,
-                                   42, 250, 255, 68, hWnd,
+        playButton = CreateWindowW(L"BUTTON", L"JOGAR AGORA", WS_CHILD | WS_VISIBLE | BS_OWNERDRAW,
+                                   0, 0, 0, 0, hWnd,
                                    reinterpret_cast<HMENU>(static_cast<INT_PTR>(ID_PLAY)), inst, nullptr);
         settingsButton = CreateWindowW(L"BUTTON", L"CONFIGURACOES", WS_CHILD | WS_VISIBLE | BS_OWNERDRAW,
-                                      315, 250, 194, 68, hWnd,
+                                      0, 0, 0, 0, hWnd,
                                       reinterpret_cast<HMENU>(static_cast<INT_PTR>(ID_SETTINGS)), inst, nullptr);
-        refreshButton = CreateWindowW(L"BUTTON", L"ATUALIZAR STATUS", WS_CHILD | WS_VISIBLE | BS_OWNERDRAW,
-                                     527, 250, 200, 68, hWnd,
+        refreshButton = CreateWindowW(L"BUTTON", L"VERIFICAR STATUS", WS_CHILD | WS_VISIBLE | BS_OWNERDRAW,
+                                     0, 0, 0, 0, hWnd,
                                      reinterpret_cast<HMENU>(static_cast<INT_PTR>(ID_REFRESH)), inst, nullptr);
-        statusLabel = CreateWindowW(L"STATIC", L"REINO: verificando...", WS_CHILD | WS_VISIBLE,
-                                    44, 179, 690, 35, hWnd, nullptr, inst, nullptr);
-        pathLabel = CreateWindowW(L"STATIC", L"", WS_CHILD | WS_VISIBLE,
-                                  44, 217, 690, 25, hWnd, nullptr, inst, nullptr);
-        SendMessageW(statusLabel, WM_SETFONT, reinterpret_cast<WPARAM>(fontBody), TRUE);
-        SendMessageW(pathLabel, WM_SETFONT, reinterpret_cast<WPARAM>(fontSmall), TRUE);
         SetTimer(hWnd, STATUS_TIMER, 10000, nullptr);
-        setText(pathLabel, L"Dados do jogo: " + iniValue(L"DataPath", L"E:\\"));
         refreshStatus();
         return 0;
     }
@@ -217,41 +269,50 @@ LRESULT CALLBACK windowProc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp) {
         case ID_PLAY: launchGame(); break;
         case ID_SETTINGS: openSettings(); break;
         case ID_REFRESH:
-            setText(pathLabel, L"Dados do jogo: " + iniValue(L"DataPath", L"E:\\"));
             refreshStatus();
             break;
         default: break;
         }
         return 0;
+    case WM_SIZE: {
+        const int w = LOWORD(lp), h = HIWORD(lp);
+        if (playButton) {
+            const int side = w - 35;
+            MoveWindow(playButton, side - 302, h - 143, 302, 58, TRUE);
+            MoveWindow(settingsButton, side - 302, h - 72, 145, 40, TRUE);
+            MoveWindow(refreshButton, side - 145, h - 72, 145, 40, TRUE);
+        }
+        InvalidateRect(hWnd, nullptr, FALSE);
+        return 0;
+    }
     case WM_DRAWITEM: {
         auto* info = reinterpret_cast<DRAWITEMSTRUCT*>(lp);
         if (info->CtlType != ODT_BUTTON) break;
+        Graphics g(info->hDC);
+        g.SetSmoothingMode(SmoothingModeAntiAlias);
+        g.SetTextRenderingHint(TextRenderingHintAntiAliasGridFit);
         bool play = info->CtlID == ID_PLAY;
-        COLORREF fill = play ? RGB(146, 106, 40) : RGB(38, 58, 83);
-        if (info->itemState & ODS_SELECTED) fill = play ? RGB(115, 81, 30) : RGB(27, 43, 66);
-        HBRUSH brush = CreateSolidBrush(fill);
-        FillRect(info->hDC, &info->rcItem, brush);
-        DeleteObject(brush);
-        HBRUSH border = CreateSolidBrush(GOLD);
-        RECT line{info->rcItem.left, info->rcItem.bottom - 3,
-                  info->rcItem.right, info->rcItem.bottom};
-        FillRect(info->hDC, &line, border);
-        DeleteObject(border);
-        SetBkMode(info->hDC, TRANSPARENT);
-        SetTextColor(info->hDC, WHITE);
-        SelectObject(info->hDC, fontButton);
-        wchar_t label[80]{};
-        GetWindowTextW(info->hwndItem, label, 80);
-        DrawTextW(info->hDC, label, -1, &info->rcItem,
-                  DT_CENTER | DT_VCENTER | DT_SINGLELINE);
+        bool pressed = (info->itemState & ODS_SELECTED) != 0;
+        RECT rr = info->rcItem;
+        RectF area(static_cast<REAL>(rr.left + 2), static_cast<REAL>(rr.top + 2),
+                   static_cast<REAL>(rr.right - rr.left - 4),
+                   static_cast<REAL>(rr.bottom - rr.top - 4));
+        roundedBox(g, area, 9,
+            play ? (pressed ? Color(255, 131, 89, 27) : Color(255, 181, 128, 49))
+                 : (pressed ? Color(255, 24, 39, 60) : Color(255, 32, 52, 76)),
+            play ? Color(255, 245, 205, 119) : Color(180, 167, 190, 212),
+            play ? 2.0f : 1.0f);
+        wchar_t text[80]{};
+        GetWindowTextW(info->hwndItem, text, 80);
+        FontFamily family(L"Segoe UI");
+        Font font(&family, play ? 22.0f : 14.0f, FontStyleBold, UnitPixel);
+        RectF bounds;
+        g.MeasureString(text, -1, &font, PointF(0, 0), &bounds);
+        SolidBrush fg(Color(255, 250, 243, 227));
+        g.DrawString(text, -1, &font,
+            PointF(area.X + (area.Width - bounds.Width) / 2,
+                   area.Y + (area.Height - bounds.Height) / 2 - 1), &fg);
         return TRUE;
-    }
-    case WM_CTLCOLORSTATIC: {
-        HDC dc = reinterpret_cast<HDC>(wp);
-        SetBkMode(dc, TRANSPARENT);
-        SetTextColor(dc, reinterpret_cast<HWND>(lp) == statusLabel
-                             ? (realmOnline ? GREEN : RED) : MUTED);
-        return reinterpret_cast<LRESULT>(bgBrush);
     }
     case WM_ERASEBKGND:
         return 1;
@@ -287,6 +348,12 @@ int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, PWSTR, int showCommand) {
         return 1;
     }
 
+    GdiplusStartupInput startup;
+    if (GdiplusStartup(&gdiplusToken, &startup, nullptr) != Ok) {
+        WSACleanup();
+        return 1;
+    }
+    artwork.reset(Image::FromFile((base / L"assets" / L"world-of-legends-login.png").c_str()));
     bgBrush = CreateSolidBrush(BG);
     panelBrush = CreateSolidBrush(PANEL);
     fontTitle = CreateFontW(-37, 0, 0, 0, FW_BOLD, FALSE, FALSE, FALSE,
@@ -316,7 +383,7 @@ int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, PWSTR, int showCommand) {
 
     mainWindow = CreateWindowExW(0, cls.lpszClassName, L"World of Legends - Launcher",
                                 WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX,
-                                CW_USEDEFAULT, CW_USEDEFAULT, 790, 420,
+                                CW_USEDEFAULT, CW_USEDEFAULT, 1020, 670,
                                 nullptr, nullptr, instance, nullptr);
     if (!mainWindow) return 1;
     SendMessageW(mainWindow, WM_SETICON, ICON_BIG,
@@ -336,6 +403,8 @@ int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, PWSTR, int showCommand) {
     DeleteObject(fontButton);
     DeleteObject(bgBrush);
     DeleteObject(panelBrush);
+    artwork.reset();
+    GdiplusShutdown(gdiplusToken);
     WSACleanup();
     return static_cast<int>(message.wParam);
 }
