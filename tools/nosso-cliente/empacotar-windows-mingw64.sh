@@ -87,6 +87,10 @@ cat > "$dest/World-of-Legends.ini" <<'INI'
 DataPath=E:\
 ; IP ou nome do computador que hospeda o reino (status TCP portas 3724/8085)
 ServerHost=127.0.0.1
+; Configuracoes reais aplicadas pelo launcher ao abrir o jogo
+FileCacheMB=256
+InitialTerrainRadius=2
+PreviewMSAA=1
 INI
 fi
 
@@ -97,8 +101,8 @@ WORLD OF LEGENDS - CLIENTE WINDOWS
    DataPath=E:\
    Esse caminho deve conter a subpasta expansions\wotlk extraida do seu jogo.
 3. Inicie World of Legends.exe com dois cliques.
-   Na janela, clique JOGAR; CONFIGURACOES abre o arquivo .ini.
-   ServerHost define o servidor verificado no status (portas 3724 e 8085).
+   Na janela, clique JOGAR; CONFIGURACOES abre uma janela para ajustar\n   dados, servidor, cache, raio inicial do terreno e MSAA da previa 3D.\n   As preferencias sao salvas em World-of-Legends.ini.
+   ServerHost define o servidor verificado no status (portas 3724 e 8085).\n   Resolucao e tela cheia devem ser ajustadas dentro do jogo.
 4. Mantenha MySQL, authserver e worldserver funcionando no PC que hospeda o reino.
 5. Para diagnosticar problemas, veja logs na pasta de trabalho do cliente.
 6. Nao distribua arquivos de dados proprietarios do jogo.
