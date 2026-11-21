@@ -10,6 +10,12 @@
 #include "rendering/vk_context.hpp"
 #include <SDL3/SDL_vulkan.h>
 #include <cstdlib>
+#ifdef _WIN32
+#define WIN32_LEAN_AND_MEAN
+#define NOMINMAX
+#include <windows.h>
+#include <SDL3/SDL_properties.h>
+#endif
 #ifdef __APPLE__
 #include "core/macos_platform.hpp"
 #include <filesystem>
@@ -274,6 +280,22 @@ void Window::setWindowIcon() {
     }
     // After SDL_SetWindowIcon, which copies what it needs.
     stbi_image_free(pixels);
+
+#ifdef _WIN32
+    // SDL_SetWindowIcon changes the SDL window, but the Windows taskbar can
+    // retain the EXE's embedded group icon. Set both Win32 sizes explicitly.
+    // Icon resource 1 is generated from assets/world-of-legends.ico by CMake.
+    HWND hwnd = static_cast<HWND>(SDL_GetPointerProperty(
+        SDL_GetWindowProperties(window), SDL_PROP_WINDOW_WIN32_HWND_POINTER, nullptr));
+    if (hwnd) {
+        HINSTANCE instance = GetModuleHandleW(nullptr);
+        HICON large = LoadIconW(instance, MAKEINTRESOURCEW(1));
+        if (large) {
+            SendMessageW(hwnd, WM_SETICON, ICON_BIG, reinterpret_cast<LPARAM>(large));
+            SendMessageW(hwnd, WM_SETICON, ICON_SMALL, reinterpret_cast<LPARAM>(large));
+        }
+    }
+#endif
 }
 
 void Window::shutdown() {
