@@ -45,6 +45,21 @@ rm -rf "$guest_dir"
 cp -R "$source_dir" "$guest_dir"
 rm -rf "$guest_dir/updates"
 rm -f "$guest_dir/wowee.exe.anterior"
+# Primeira execucao guiada: detecta os dados instalados pelo proprio jogador.
+cp "$root/tools/nosso-cliente/configurar-dados-convidado.ps1" "$guest_dir/configurar-dados-convidado.ps1"
+cat > "$guest_dir/INICIAR-WOL.cmd" <<'BAT'
+@echo off
+setlocal
+powershell.exe -NoProfile -ExecutionPolicy Bypass -STA -File "%~dp0configurar-dados-convidado.ps1" -LauncherDir "%~dp0"
+if errorlevel 1 (
+  echo.
+  echo Nao foi possivel localizar os dados WotLK. Confira a mensagem acima.
+  pause
+  exit /b 1
+)
+start "" "%~dp0World of Legends.exe"
+BAT
+
 # Configuracao personalizada e independente da instalacao do host.
 cat > "$guest_dir/World-of-Legends.ini" <<INI
 [WorldOfLegends]
@@ -61,13 +76,15 @@ INI
 cat > "$guest_dir/COMECE-AQUI.txt" <<'TXT'
 WORLD OF LEGENDS - CONVIDADO
 1. Extraia a pasta completa no seu computador.
-2. Abra World of Legends.exe.
-3. Em CONFIGURACOES, ajuste CAMINHO DOS DADOS para a pasta
-   onde voce possui legitimamente expansions/wotlk.
+2. Abra INICIAR-WOL.cmd. Ele tenta localizar automaticamente os dados WotLK
+   que voce ja possui e configura o caminho no launcher.
+3. Se nao encontrar, selecione a pasta que contem expansions/wotlk.
+   O programa nao baixa nem copia os dados comerciais do jogo.
 4. O endereco do reino ja vem configurado. Nao precisa de VPN.
 5. Peca ao administrador uma conta individual do World of Legends.
 6. O servidor do anfitriao precisa ficar ligado para jogar.
-7. O pacote nao inclui os dados proprietarios do jogo.
+7. Depois da configuracao voce pode abrir World of Legends.exe diretamente.
+8. O pacote nao inclui os dados proprietarios do jogo.
 TXT
 if command -v powershell.exe >/dev/null; then
   export WOL_GUEST_DIR="$(cygpath -w "$guest_dir")"
