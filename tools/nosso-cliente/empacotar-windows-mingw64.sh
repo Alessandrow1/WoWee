@@ -66,6 +66,9 @@ g++ -std=c++20 -O2 -municode -mwindows -static-libgcc -static-libstdc++ \
     "$root/tools/nosso-cliente/world-of-legends-launcher.cpp" "$res_file" \
     -o "$dest/World of Legends.exe" -luser32 -lgdi32 -lshell32 -lws2_32 -lgdiplus
 
+# Include the local, inspected update checker. Downloaded content is never executed.
+cp "$root/tools/nosso-cliente/world-of-legends-update.ps1" "$dest/world-of-legends-update.ps1"
+
 # ldd includes transitive dependencies. Copy only MSYS2/MinGW DLLs, not Windows System32.
 echo "Incluindo DLLs do ambiente MinGW64 ..."
 while IFS= read -r dll; do
@@ -101,11 +104,17 @@ WORLD OF LEGENDS - CLIENTE WINDOWS
    DataPath=E:\
    Esse caminho deve conter a subpasta expansions\wotlk extraida do seu jogo.
 3. Inicie World of Legends.exe com dois cliques.
-   Na janela, clique JOGAR; CONFIGURACOES abre uma janela para ajustar\n   dados, servidor, cache, raio inicial do terreno e MSAA da previa 3D.\n   As preferencias sao salvas em World-of-Legends.ini.
-   ServerHost define o servidor verificado no status (portas 3724 e 8085).\n   Resolucao e tela cheia devem ser ajustadas dentro do jogo.
-4. Mantenha MySQL, authserver e worldserver funcionando no PC que hospeda o reino.
-5. Para diagnosticar problemas, veja logs na pasta de trabalho do cliente.
-6. Nao distribua arquivos de dados proprietarios do jogo.
+   Na janela, clique JOGAR; CONFIGURACOES abre uma janela para ajustar
+   dados, servidor, cache, raio inicial do terreno e MSAA da previa 3D.
+   As preferencias sao salvas em World-of-Legends.ini.
+   ServerHost define o servidor verificado no status (portas 3724 e 8085).
+   Resolucao e tela cheia devem ser ajustadas dentro do jogo.
+4. VERIFICAR ATUALIZACOES consulta GitHub Releases. Releases precisam ter
+   World-of-Legends-Windows.zip e World-of-Legends-Windows.zip.sha256.
+   O pacote verificado fica em updates/; NAO e instalado automaticamente.
+5. Mantenha MySQL, authserver e worldserver funcionando no PC que hospeda o reino.
+6. Para diagnosticar problemas, veja logs na pasta de trabalho do cliente.
+7. Nao distribua arquivos de dados proprietarios do jogo.
 TXT
 
 # Verify no MinGW DLL was missed before making an archive.
