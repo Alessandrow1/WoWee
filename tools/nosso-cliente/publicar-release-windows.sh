@@ -36,12 +36,25 @@ for required in \
   "World-of-Legends-Windows/wowee.exe" \
   "World-of-Legends-Windows/world-of-legends-update.ps1" \
   "World-of-Legends-Windows/World-of-Legends.ini" \
+  "World-of-Legends-Windows/World-of-Legends.version" \
   "World-of-Legends-Windows/assets/world-of-legends.ico" \
   "World-of-Legends-Windows/assets/world-of-legends.png"; do
   if ! printf '%s\n' "$contents" | grep -Fxq "$required"; then
     echo "ERRO: arquivo ausente dentro do ZIP: $required"; exit 1
   fi
 done
+# Refuse to publish a stale ZIP under a newer tag.
+package_tag="$(unzip -p "$zipfile" "World-of-Legends-Windows/World-of-Legends.version" | tr -d '\r\n')"
+if [[ "$package_tag" != "$tag" ]]; then
+  echo "ERRO: pacote e tag diferentes (pacote: $package_tag, pedido: $tag)."
+  echo "Recompile o pacote usando o empacotador atual antes de publicar."
+  exit 1
+fi
+source_tag="v$(tr -d '\r\n' < tools/nosso-cliente/world-of-legends-version.txt)"
+if [[ "$source_tag" != "$tag" ]]; then
+  echo "ERRO: versao do codigo ($source_tag) diferente da tag ($tag)."
+  exit 1
+fi
 # The WoWee build regenerates tracked SPIR-V shaders and opcode registries.
 # Those generated files are expected to differ after compilation. Do not
 # reset/delete them, and do not block a tested binary release because of them.
