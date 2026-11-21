@@ -7,7 +7,7 @@ if [[ "${MSYSTEM:-}" != "MINGW64" ]]; then
   echo "ERRO: abra MSYS2 MINGW64." >&2
   exit 1
 fi
-for cmd in g++ ldd cp find; do
+for cmd in g++ windres ldd cp find; do
   command -v "$cmd" >/dev/null || { echo "ERRO: faltando $cmd" >&2; exit 1; }
 done
 
@@ -32,9 +32,24 @@ cp "$root/assets/world-of-legends-login.png" "$dest/assets/"
 cp "$root/assets/world-of-legends-loading.jpg" "$dest/assets/"
 cp -R "$root/Data" "$dest/Data"
 
+# The official icon is a binary file supplied separately; do not embed it as text in Git.
+icon="$root/assets/world-of-legends.ico"
+if [[ ! -f "$icon" ]]; then
+  echo "ERRO: icone ausente: $icon" >&2
+  echo "Extraia o pacote de icone para a pasta assets/ antes de empacotar." >&2
+  exit 1
+fi
+# Windres embeds an actual Windows icon resource, not merely an image beside the exe.
+icon_win="$(cygpath -m "$icon")"
+rc_file="$root/build/nosso-cliente-mingw64/world-of-legends-launcher.rc"
+res_file="$root/build/nosso-cliente-mingw64/world-of-legends-launcher-res.o"
+printf '1 ICON "%s"\\n' "$icon_win" > "$rc_file"
+windres -i "$rc_file" -o "$res_file" -O coff
+cp "$icon" "$dest/assets/world-of-legends.ico"
+
 echo "Compilando iniciador grafico World of Legends.exe ..."
 g++ -std=c++20 -O2 -municode -mwindows -static-libgcc -static-libstdc++ \
-    "$root/tools/nosso-cliente/world-of-legends-launcher.cpp" \
+    "$root/tools/nosso-cliente/world-of-legends-launcher.cpp" "$res_file" \
     -o "$dest/World of Legends.exe" -luser32
 
 # ldd includes transitive dependencies. Copy only MSYS2/MinGW DLLs, not Windows System32.
