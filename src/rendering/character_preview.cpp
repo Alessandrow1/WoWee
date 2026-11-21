@@ -727,14 +727,19 @@ bool CharacterPreview::loadCharacter(game::Race race, game::Gender gender,
         }
     }
 
-    // If hair scalp texture was found, ensure it's loaded for type-6 slot
+    // Keep the chosen hair colour on every hair slot, not only the first.
+    // Some character models use separate texture slots for the scalp and
+    // facial hair. Binding just the first one leaves beards at their default
+    // colour even though the hairstyle changes correctly.
+    VkTexture* chosenHairTexture = nullptr;
     if (!hairScalpPath.empty()) {
-        VkTexture* hairTex = charRenderer_->loadTexture(hairScalpPath);
-        if (hairTex != nullptr) {
+        chosenHairTexture = charRenderer_->loadTexture(hairScalpPath);
+        if (chosenHairTexture != nullptr) {
             for (size_t ti = 0; ti < model.textures.size(); ti++) {
                 if (model.textures[ti].type == 6) {
-                    charRenderer_->setModelTexture(PREVIEW_MODEL_ID, static_cast<uint32_t>(ti), hairTex);
-                    break;
+                    charRenderer_->setModelTexture(PREVIEW_MODEL_ID,
+                                                  static_cast<uint32_t>(ti),
+                                                  chosenHairTexture);
                 }
             }
         }
@@ -760,6 +765,17 @@ bool CharacterPreview::loadCharacter(game::Race race, game::Gender gender,
 
     std::unordered_set<uint16_t> activeGeosets = buildBaseGeosets();
     charRenderer_->setActiveGeosets(instanceId_, activeGeosets);
+
+    // Beard, moustache and sideburn meshes occupy facial geoset groups 1-3.
+    // Their batches can refer to a skin/legacy slot instead of type-6 hair,
+    // especially with replacement M2 assets. Give only those groups the same
+    // selected colour texture as the scalp. Never override the body group 0.
+    if (chosenHairTexture != nullptr) {
+        for (uint16_t group = 1; group <= 3; ++group) {
+            charRenderer_->setGroupTextureOverride(instanceId_, group,
+                                                   chosenHairTexture);
+        }
+    }
 
     // Play idle animation (Stand = animation ID 0)
     charRenderer_->playAnimation(instanceId_, rendering::anim::STAND, true);
