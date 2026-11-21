@@ -755,7 +755,11 @@ void CharacterCreateScreen::render(game::GameHandler& /*gameHandler*/) {
     appearancePicker("look.face", "Rosto", &face, maxFace);
     appearancePicker("look.hairstyle", "Cabelo", &hairStyle, maxHairStyle);
     colourPalette("look.haircolor", "Cor do cabelo", &hairColor, maxHairColor, true);
-    appearancePicker("look.facialhair", "Detalhes do rosto", &facialHair, maxFacialHair);
+    const bool humanMale = !availableRaces_.empty() &&
+        availableRaces_[static_cast<size_t>(raceIndex)] == game::Race::HUMAN &&
+        genderIndex == 0;
+    appearancePicker("look.facialhair", humanMale ? "Barba e bigode" : "Detalhes faciais",
+                     &facialHair, maxFacialHair);
 
     // Skin and hairstyle choose the valid face/color subsets. Refresh now so a
     // Create click in this same frame sends IDs from the newly selected subset.
