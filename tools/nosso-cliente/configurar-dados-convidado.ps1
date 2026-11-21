@@ -94,7 +94,7 @@ try {
     }
     if (-not $found) {
         [System.Windows.Forms.MessageBox]::Show(
-            "Nao localizamos automaticamente expansions\wotlk. Selecione a pasta principal de uma instalacao legitima que contenha expansions\wotlk. Os arquivos nao serao copiados.",
+            "Nao localizamos automaticamente expansions\wotlk. Selecione a pasta principal de uma instalacao legitima que contenha expansions\wotlk. O instalador pode copiar os dados para esta pasta, se voce quiser.",
             'World of Legends - localizar dados', 'OK', 'Information') | Out-Null
         $dialog = New-Object System.Windows.Forms.FolderBrowserDialog
         $dialog.Description = 'Selecione a pasta que CONTEM expansions\wotlk'
@@ -108,6 +108,66 @@ try {
             "Dados nao encontrados. E necessario possuir uma pasta expansions\wotlk compativel. Nao foi feita nenhuma alteracao.",
             'World of Legends', 'OK', 'Warning') | Out-Null
         exit 1
+    }
+    # Opcao local: tornar a instalacao independente sem distribuir/copiar
+    # material de terceiros no ZIP publicado. O proprio jogador escolhe
+    # a origem dos dados que tem direito de utilizar no seu PC.
+    $portableRoot = $launcherDir
+    $portableData = Join-Path $portableRoot 'expansions\wotlk'
+    if (-not (ValidDataRoot $portableRoot) -and
+        -not [string]::Equals([IO.Path]::GetFullPath($found).TrimEnd('\'),
+                              [IO.Path]::GetFullPath($portableRoot).TrimEnd('\'),
+                              [StringComparison]::OrdinalIgnoreCase)) {
+        $choice = [System.Windows.Forms.MessageBox]::Show(
+            "Dados encontrados em:\n$found\n\nDeseja COPIAR esses dados para a pasta do World of Legends?\n\nIsso criara uma instalacao independente, mas podera consumir muitos GB e demorar. Os originais serao preservados.\n\nSIM: copiar. NAO: usar os arquivos onde ja estao.",
+            'World of Legends - instalacao portatil',
+            [System.Windows.Forms.MessageBoxButtons]::YesNo,
+            [System.Windows.Forms.MessageBoxIcon]::Question)
+        if ($choice -eq [System.Windows.Forms.DialogResult]::Yes) {
+            $sourceData = Join-Path $found 'expansions\wotlk'
+            if (-not (Test-Path -LiteralPath $sourceData -PathType Container)) {
+                throw 'Origem WotLK nao encontrada.'
+            }
+            $srcCanonical = [IO.Path]::GetFullPath($sourceData).TrimEnd('\')
+            $dstCanonical = [IO.Path]::GetFullPath($portableData).TrimEnd('\')
+            if ($dstCanonical.StartsWith($srcCanonical + '\', [StringComparison]::OrdinalIgnoreCase) -or
+                $srcCanonical.StartsWith($dstCanonical + '\', [StringComparison]::OrdinalIgnoreCase)) {
+                throw 'Copiar uma pasta para dentro dela mesma nao e permitido.'
+            }
+            if (Test-Path -LiteralPath $portableData) {
+                throw 'Ja existe uma pasta expansions\\wotlk local. Resolva isso antes de copiar.'
+            }
+            $driveRoot = [IO.Path]::GetPathRoot($launcherDir)
+            $drive = New-Object IO.DriveInfo($driveRoot)
+            $size = [long]0
+            Get-ChildItem -LiteralPath $sourceData -File -Recurse -ErrorAction Stop |
+                ForEach-Object { $size += $_.Length }
+            if ($drive.AvailableFreeSpace -lt ($size + 512MB)) {
+                throw ('Espaco insuficiente: sao necessarios aproximadamente ' +
+                    [math]::Ceiling(($size + 512MB) / 1GB) + ' GB livres.')
+            }
+            $expansionFolder = Join-Path $portableRoot 'expansions'
+            [IO.Directory]::CreateDirectory($expansionFolder) | Out-Null
+            $staging = Join-Path $expansionFolder ('wotlk.partial-' + [Guid]::NewGuid().ToString('N'))
+            [IO.Directory]::CreateDirectory($staging) | Out-Null
+            try {
+                Write-Host ('Copiando arquivos para ' + $staging)
+                & robocopy.exe $sourceData $staging /E /R:1 /W:1 /XJ /NFL /NDL /NP
+                $copyStatus = $LASTEXITCODE
+                if ($copyStatus -gt 7) {
+                    throw ('Falha na copia dos dados (robocopy codigo ' + $copyStatus + ').')
+                }
+                if (-not (Test-Path -LiteralPath $staging -PathType Container)) {
+                    throw 'Pasta copiada nao encontrada.'
+                }
+                Move-Item -LiteralPath $staging -Destination $portableData -ErrorAction Stop
+                $found = $portableRoot
+                Write-Host 'Instalacao portatil criada com sucesso.'
+            } catch {
+                Write-Warning ('Copia interrompida. Arquivos parciais em: ' + $staging)
+                throw
+            }
+        }
     }
     if (-not [WolIni]::WritePrivateProfileString('WorldOfLegends', 'DataPath', $found, $ini)) {
         throw 'Nao foi possivel gravar DataPath no arquivo INI.'
