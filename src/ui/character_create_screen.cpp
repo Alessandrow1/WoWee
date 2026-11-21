@@ -643,11 +643,11 @@ void CharacterCreateScreen::render(game::GameHandler& /*gameHandler*/) {
         const std::string nextId = std::string(id) + ".next";
         if (ui_.button(previousId.c_str(), sa,
                        ImVec2(sa.x + arrowW, sb.y), "<",
-                       PaperUI::ButtonKind::Secondary, canChoose)) {
+                       PaperUI::ButtonKind::Quiet, canChoose)) {
             *value = (*value <= 0) ? maxVal : (*value - 1);
         }
         if (ui_.button(nextId.c_str(), ImVec2(sb.x - arrowW, sa.y), sb, ">",
-                       PaperUI::ButtonKind::Secondary, canChoose)) {
+                       PaperUI::ButtonKind::Quiet, canChoose)) {
             *value = (*value >= maxVal) ? 0 : (*value + 1);
         }
         if (canChoose) {
