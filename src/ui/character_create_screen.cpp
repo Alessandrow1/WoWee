@@ -706,8 +706,14 @@ void CharacterCreateScreen::render(game::GameHandler& /*gameHandler*/) {
             const ImVec2 a(x, y);
             const ImVec2 b(x + swatch, y + swatch);
             const bool hovered = ui_.hover(a, b);
-            if (hovered && ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
-                *value = i;
+            if (hovered) {
+                ImGui::BeginTooltip();
+                ImGui::Text("Opção %d de %d", i + 1, options);
+                ImGui::TextUnformatted("Amostra ilustrativa; confira a cor no personagem 3D.");
+                ImGui::EndTooltip();
+                if (ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
+                    *value = i;
+                }
             }
             const ImU32 colour = forHair
                 ? kHairColours[i % paletteSize] : kSkinColours[i % paletteSize];
