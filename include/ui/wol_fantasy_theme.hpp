@@ -7,6 +7,7 @@ namespace wowee::ui {
 
 inline void applyWolFantasyTheme(PaperUI& ui) {
     PaperTheme& t = ui.theme();
+    t.fantasyMode = true;
     // Midnight blue surfaces, soft gold typography, restrained teal highlights.
     t.paperTop     = IM_COL32(15, 27, 46, 250);
     t.paperBottom  = IM_COL32(8, 16, 29, 255);
