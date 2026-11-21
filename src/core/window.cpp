@@ -10,15 +10,13 @@
 #include "rendering/vk_context.hpp"
 #include <SDL3/SDL_vulkan.h>
 #include <cstdlib>
+#include <filesystem>
 #ifdef _WIN32
-#define WIN32_LEAN_AND_MEAN
-#define NOMINMAX
 #include <windows.h>
 #include <SDL3/SDL_properties.h>
 #endif
 #ifdef __APPLE__
 #include "core/macos_platform.hpp"
-#include <filesystem>
 #include <mach-o/dyld.h>
 #include <vector>
 #endif
