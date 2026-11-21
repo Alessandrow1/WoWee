@@ -306,7 +306,7 @@ void checkForUpdates() {
     // This packaged, locally maintained script only stages verified downloads.
     // It never executes downloaded code or replaces a running installation.
     const std::wstring params = L"-NoProfile -ExecutionPolicy Bypass -File \"" +
-        script.wstring() + L"\" -InstalledVersion \"0.2.0\"";
+        script.wstring() + L"\" -InstalledVersion \"0.3.0\"";
     HINSTANCE started = ShellExecuteW(mainWindow, L"open", L"powershell.exe",
                                       params.c_str(), base.c_str(), SW_SHOWNORMAL);
     if (reinterpret_cast<INT_PTR>(started) <= 32) {
