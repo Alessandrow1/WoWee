@@ -51,8 +51,17 @@ if [[ -z "$seven_zip" ]]; then
     fi
   done
 fi
-if [[ -z "$seven_zip" ]]; then
-  echo "ERRO: 7-Zip nao encontrado. Instale o 7-Zip para criar ZIP64 com arquivos grandes." >&2
+# WinRAR tambem cria ZIP64. Use a interface de linha de comando do
+# WinRAR.exe (Rar.exe sozinho nao cria ZIP).
+winrar=""
+for candidate in "/c/Program Files/WinRAR/WinRAR.exe" "/c/Program Files (x86)/WinRAR/WinRAR.exe"; do
+  if [[ -f "$candidate" ]]; then
+    winrar="$candidate"
+    break
+  fi
+done
+if [[ -z "$seven_zip" && -z "$winrar" ]]; then
+  echo "ERRO: nao foi encontrado 7-Zip nem WinRAR.exe." >&2
   exit 1
 fi
 
@@ -87,13 +96,24 @@ WORLD OF LEGENDS - PACOTE COMPLETO PARA USO PRIVADO AUTORIZADO
 TXT
 
 rm -f "$archive" "$archive.sha256"
-echo "Criando ZIP64 com 7-Zip..."
-(
-  cd "$root/dist"
-  "$seven_zip" a -tzip -mx=1 -mmt=on "World-of-Legends-Completo-Privado.zip" "World-of-Legends-Completo-Privado" -y
-)
-echo "Verificando integridade do ZIP..."
-"$seven_zip" t "$archive"
+if [[ -n "$winrar" ]]; then
+  echo "Criando ZIP64 com WinRAR..."
+  (
+    cd "$root/dist"
+    "$winrar" a -afzip -m1 -y "World-of-Legends-Completo-Privado.zip" "World-of-Legends-Completo-Privado"
+  )
+  [[ -s "$archive" ]] || { echo "ERRO: ZIP nao foi criado." >&2; exit 1; }
+  echo "Verificando integridade do ZIP com WinRAR..."
+  "$winrar" t "$archive"
+else
+  echo "Criando ZIP64 com 7-Zip..."
+  (
+    cd "$root/dist"
+    "$seven_zip" a -tzip -mx=1 -mmt=on "World-of-Legends-Completo-Privado.zip" "World-of-Legends-Completo-Privado" -y
+  )
+  echo "Verificando integridade do ZIP com 7-Zip..."
+  "$seven_zip" t "$archive"
+fi
 if command -v sha256sum >/dev/null 2>&1; then
   (cd "$root/dist" && sha256sum "World-of-Legends-Completo-Privado.zip" > "World-of-Legends-Completo-Privado.zip.sha256")
 fi
