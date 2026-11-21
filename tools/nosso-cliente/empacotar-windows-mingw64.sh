@@ -44,6 +44,15 @@ if [[ ! -f "$icon" ]]; then
   echo "Extraia o pacote de icone para a pasta assets/ antes de empacotar." >&2
   exit 1
 fi
+# SDL_SetWindowIcon reads PNG at runtime; the embedded ICO alone only changes
+# the file/shortcut icon. Both files must be shipped for the taskbar to match.
+runtime_icon="$root/assets/world-of-legends.png"
+if [[ ! -f "$runtime_icon" ]]; then
+  echo "ERRO: icone PNG ausente: $runtime_icon" >&2
+  echo "Coloque world-of-legends.png junto do .ico dentro de assets/." >&2
+  exit 1
+fi
+cp "$runtime_icon" "$dest/assets/world-of-legends.png"
 # Windres embeds an actual Windows icon resource, not merely an image beside the exe.
 icon_win="$(cygpath -m "$icon")"
 rc_file="$root/build/nosso-cliente-mingw64/world-of-legends-launcher.rc"
