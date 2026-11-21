@@ -118,7 +118,11 @@ WORLD OF LEGENDS - CLIENTE WINDOWS
    Na janela, clique JOGAR; CONFIGURACOES abre uma janela para ajustar
    dados, servidor, cache, raio inicial do terreno e MSAA da previa 3D.
    As preferencias sao salvas em World-of-Legends.ini.
-   ServerHost define o servidor verificado no status (portas 3724 e 8085).
+   ServerHost define o endereco de login (TCP 3724) usado pelo cliente
+   e o host verificado no status do launcher (TCP 3724 e 8085).
+   Para jogadores em outra rede, use um DNS/IP alcancavel pela internet.
+   O authserver tambem deve anunciar no realmlist um endereco externo
+   alcancavel para o worldserver. Nao use 127.0.0.1 no PC de convidados.
    Resolucao e tela cheia devem ser ajustadas dentro do jogo.
 4. VERIFICAR ATUALIZACOES consulta GitHub Releases. Releases precisam ter
    World-of-Legends-Windows.zip e World-of-Legends-Windows.zip.sha256.
