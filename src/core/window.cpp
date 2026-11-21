@@ -248,7 +248,9 @@ bool Window::initialize() {
 /// Not fatal, and quiet about it: a missing or unreadable icon costs the window
 /// nothing but the icon.
 void Window::setWindowIcon() {
-    static constexpr const char* kIconPath = "assets/Wowee.png";
+    const char* kIconPath = "assets/world-of-legends.png";
+    if (!std::filesystem::exists(kIconPath))
+        kIconPath = "assets/Wowee.png";
     int w = 0, h = 0, channels = 0;
     unsigned char* pixels = stbi_load(kIconPath, &w, &h, &channels, 4);
     if (!pixels) {
