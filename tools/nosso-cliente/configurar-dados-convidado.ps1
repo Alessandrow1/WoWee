@@ -119,7 +119,7 @@ try {
                               [IO.Path]::GetFullPath($portableRoot).TrimEnd('\'),
                               [StringComparison]::OrdinalIgnoreCase)) {
         $choice = [System.Windows.Forms.MessageBox]::Show(
-            "Dados encontrados em:\n$found\n\nDeseja COPIAR esses dados para a pasta do World of Legends?\n\nIsso criara uma instalacao independente, mas podera consumir muitos GB e demorar. Os originais serao preservados.\n\nSIM: copiar. NAO: usar os arquivos onde ja estao.",
+            "Dados encontrados em:`n$found`n`nDeseja COPIAR esses dados para a pasta do World of Legends?`n`nIsso criara uma instalacao independente, mas podera consumir muitos GB e demorar. Os originais serao preservados.`n`nSIM: copiar. NAO: usar os arquivos onde ja estao.",
             'World of Legends - instalacao portatil',
             [System.Windows.Forms.MessageBoxButtons]::YesNo,
             [System.Windows.Forms.MessageBoxIcon]::Question)
