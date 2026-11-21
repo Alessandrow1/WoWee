@@ -53,6 +53,9 @@ function ExtractSafe([string]$zip,[string]$targetRoot) {
    $total=[long]0
    foreach($e in $entries) {
      $name=$e.FullName.Replace('\','/')
+     # Windows Compress-Archive may store directory entries using backslashes.
+     # Detect directory markers on the normalized path, not the raw ZIP name.
+     $isDirectory=$name.EndsWith('/') -or (($e.ExternalAttributes -band 0x10) -ne 0) -or ((($e.ExternalAttributes -shr 16) -band 0xF000) -eq 0x4000)
      if(-not $name.StartsWith('World-of-Legends-Windows/',[StringComparison]::Ordinal) -or
         $name.Contains(':') -or
         $name.Split('/') -contains '..' -or
@@ -61,6 +64,7 @@ function ExtractSafe([string]$zip,[string]$targetRoot) {
         throw ('Caminho ZIP inseguro: '+$name)
      }
      if(-not $seen.Add($name.TrimEnd('/'))){throw ('Arquivo ZIP duplicado: '+$name)}
+     if($isDirectory -and $e.Length -gt 0){throw ('Diretorio ZIP contem dados: '+$name)}
      $total += [long]$e.Length
      if($total -gt 4GB){throw 'ZIP descompactado muito grande.'}
    }
@@ -69,7 +73,9 @@ function ExtractSafe([string]$zip,[string]$targetRoot) {
      $relative=$e.FullName.Replace('\','/').Substring('World-of-Legends-Windows/'.Length)
      if($relative.Length -eq 0){continue}
      $output=Join-Path $targetRoot ($relative.Replace('/',[IO.Path]::DirectorySeparatorChar))
-     if($e.FullName.EndsWith('/')) {
+     $normalized=$e.FullName.Replace('\','/')
+     $directoryEntry=$normalized.EndsWith('/') -or (($e.ExternalAttributes -band 0x10) -ne 0) -or ((($e.ExternalAttributes -shr 16) -band 0xF000) -eq 0x4000)
+     if($directoryEntry) {
        [IO.Directory]::CreateDirectory($output)|Out-Null
      } else {
        [IO.Directory]::CreateDirectory((Split-Path -Parent $output))|Out-Null
