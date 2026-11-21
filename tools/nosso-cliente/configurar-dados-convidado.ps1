@@ -49,7 +49,9 @@ function Probe([string]$candidate) {
 }
 
 try {
-    $found = Probe (GetConfiguredRoot)
+    # Priorize dados que acompanham o pacote completo, evitando usar E:\\ do anfitriao.
+    $found = Probe $launcherDir
+    if (-not $found) { $found = Probe (GetConfiguredRoot) }
     if (-not $found) {
         $candidates = New-Object System.Collections.Generic.List[string]
         $candidates.Add($launcherDir)
