@@ -236,17 +236,17 @@ namespace {
 
 // The card's layout, written in units and drawn at a scale taken from the
 // window, so what follows is its proportions rather than its pixels.
-constexpr float kCardWidth     = 432.0f;
+constexpr float kCardWidth     = 390.0f;
 constexpr float kCardPadX      = 34.0f;
 constexpr float kCardPadTop    = 26.0f;
 constexpr float kCardPadBottom = 20.0f;
-constexpr float kTitleSize     = 44.0f;
+constexpr float kTitleSize     = 34.0f;
 constexpr float kLabelSize     = 14.0f;
 constexpr float kBodySize      = 15.0f;
 constexpr float kSmallSize     = 13.0f;
 constexpr float kFieldHeight   = 38.0f;
 constexpr float kButtonHeight  = 46.0f;
-constexpr float kRowGap        = 14.0f;
+constexpr float kRowGap        = 11.0f;
 constexpr float kLabelGap      = 3.0f;
 
 /// A code that looks like one someone finished typing.
@@ -635,13 +635,13 @@ void AuthScreen::renderCard(auth::AuthHandler& authHandler, float screenW, float
 
     const float cardW = px(kCardWidth);
     const float cardH = px(kCardPadTop) + contentH + px(kCardPadBottom);
-    // Keep the World of Legends emblem visible on widescreen displays.
-    // The compact layout remains centered for narrow windows.
-    const float cardX = (screenW >= cardW * 2.1f)
-        ? std::max(px(20), screenW * 0.035f)
-        : (screenW - cardW) * 0.5f;
-    const ImVec2 cardA(cardX,
-                       std::max(px(12), (screenH - cardH) * 0.48f));
+    // Center the smaller login card below the main background emblem.
+    // If a short screen or expanded options leave insufficient room below
+    // the logo, keep the entire card visible instead of clipping the form.
+    const float cardX = (screenW - cardW) * 0.5f;
+    const float bottomLimit = std::max(px(12), screenH - cardH - px(12));
+    const float preferredY = screenH * 0.43f;
+    const ImVec2 cardA(cardX, std::min(preferredY, bottomLimit));
     const ImVec2 cardB(cardA.x + cardW, cardA.y + cardH);
 
     ui_.sheet(cardA, cardB, /*taped=*/false);
