@@ -735,33 +735,42 @@ void AuthScreen::renderCard(auth::AuthHandler& authHandler, float screenW, float
     // it. It used to sit three rows down behind "more options", so the screen
     // asked for an account on a server it never named.
     {
-        std::vector<std::string> rows;
-        rows.reserve(servers_.size() + 1);
-        for (const ServerProfile& s : servers_) rows.push_back(serverRowLabel(s));
-        rows.emplace_back("Outro servidor...");
+        // Launching from the branded Windows launcher locks the visible realm
+        // choice to its configured server. Existing saved profiles remain
+        // untouched on disk and can still be used outside the WoL launcher.
+        const char* wolHost = std::getenv("WOWEE_SERVER_HOST");
+        const bool brandedLauncher = wolHost && *wolHost;
+        if (brandedLauncher) {
+            ui_.text(col.at(), "Servidor", labelSize, theme.inkSoft);
+            col.gap(labelRow);
+            ui_.text(col.at(), "World of Legends", bodySize, theme.ink);
+            col.gap(px(kFieldHeight - bodySize + kRowGap));
+        } else {
+            std::vector<std::string> rows;
+            rows.reserve(servers_.size() + 1);
+            for (const ServerProfile& profile : servers_) rows.push_back(serverRowLabel(profile));
+            rows.emplace_back("Outro servidor...");
 
-        const bool known = selectedServerIndex_ >= 0 &&
-                           selectedServerIndex_ < static_cast<int>(servers_.size());
-        const std::string preview =
-            known ? serverRowLabel(servers_[static_cast<size_t>(selectedServerIndex_)])
-                  : makeServerKey(hostname_.text(), port);
+            const bool known = selectedServerIndex_ >= 0 &&
+                               selectedServerIndex_ < static_cast<int>(servers_.size());
+            const std::string preview =
+                known ? serverRowLabel(servers_[static_cast<size_t>(selectedServerIndex_)])
+                      : makeServerKey(hostname_.text(), port);
 
-        int choice = known ? selectedServerIndex_ : static_cast<int>(servers_.size());
-        ui_.text(col.at(), "Servidor", labelSize, theme.inkSoft);
-        col.gap(labelRow);
-        const auto [a, b] = col.row(px(kFieldHeight));
-        if (ui_.dropdown("servers", a, b, preview, rows, &choice)) {
-            if (choice >= static_cast<int>(servers_.size())) {
-                // "Somewhere else" is a request for the address box, which
-                // lives behind the disclosure - so open it, or the choice
-                // does nothing visible and there is nowhere to type.
-                selectedServerIndex_ = -1;
-                advancedOpen_ = true;
-            } else {
-                selectServerProfile(choice);
+            int choice = known ? selectedServerIndex_ : static_cast<int>(servers_.size());
+            ui_.text(col.at(), "Servidor", labelSize, theme.inkSoft);
+            col.gap(labelRow);
+            const auto [a, b] = col.row(px(kFieldHeight));
+            if (ui_.dropdown("servers", a, b, preview, rows, &choice)) {
+                if (choice >= static_cast<int>(servers_.size())) {
+                    selectedServerIndex_ = -1;
+                    advancedOpen_ = true;
+                } else {
+                    selectServerProfile(choice);
+                }
             }
+            col.gap(px(kRowGap));
         }
-        col.gap(px(kRowGap));
     }
 
     {
